@@ -1,10 +1,10 @@
 import { useState, useEffect } from 'react'
 import './App.css'
-import { Home, Clock, FileText, Menu, ChevronRight, ChevronLeft, Plus, Trash2, X } from 'lucide-react'
+import { Home, Clock, FileText, Menu, ChevronRight, ChevronLeft, Plus, X } from 'lucide-react'
 
 type TabType = 'home' | 'attendance' | 'payslip' | 'others'
 type PayslipTabType = 'salary' | 'bonus'
-type ScreenType = 'main' | 'payslipDetail' | 'createPayslip' | 'deletePayslip'
+type ScreenType = 'main' | 'payslipDetail' | 'createPayslip' | 'deletePayslip' | 'editPayslip'
 
 interface PayslipItem {
   id: string
@@ -83,6 +83,11 @@ function App() {
   const [newPayslipMonth, setNewPayslipMonth] = useState(1)
   const [newPayments, setNewPayments] = useState<{ name: string; amount: number }[]>([{ name: '', amount: 0 }])
   const [newDeductions, setNewDeductions] = useState<{ name: string; amount: number }[]>([{ name: '', amount: 0 }])
+  const [showActionMenu, setShowActionMenu] = useState(false)
+  const [editTab, setEditTab] = useState<PayslipTabType>('salary')
+  const [editingPayslip, setEditingPayslip] = useState<PayslipItem | null>(null)
+  const [editPayments, setEditPayments] = useState<{ name: string; amount: number }[]>([])
+  const [editDeductions, setEditDeductions] = useState<{ name: string; amount: number }[]>([])
 
   useEffect(() => {
     const timer = setInterval(() => {
@@ -373,44 +378,75 @@ function App() {
   const renderOthersScreen = () => (
     <div className="flex flex-col h-full bg-[#F8F9FB]">
       <div className="p-4 pt-12">
-        <h2 className="text-xl font-bold mb-6">その他</h2>
+        <div className="flex items-center justify-between mb-6">
+          <h2 className="text-xl font-bold">その他</h2>
+          <button
+            onClick={() => setShowActionMenu(true)}
+            className="w-10 h-10 bg-[#3366FF] rounded-full flex items-center justify-center shadow-sm"
+          >
+            <Plus className="w-6 h-6 text-white" />
+          </button>
+        </div>
         
         <div className="space-y-3">
           {[
-            { label: 'プロフィール', icon: '👤' },
-            { label: '通知設定', icon: '🔔' },
-            { label: 'ヘルプ', icon: '❓' },
-            { label: 'お問い合わせ', icon: '✉️' },
+            { label: 'プロフィール' },
+            { label: '通知設定' },
+            { label: 'ヘルプ' },
+            { label: 'お問い合わせ' },
           ].map((item, idx) => (
             <button key={idx} className="w-full bg-white rounded-xl p-4 shadow-sm flex items-center justify-between">
-              <div className="flex items-center">
-                <span className="mr-3">{item.icon}</span>
-                <span>{item.label}</span>
-              </div>
+              <span>{item.label}</span>
               <ChevronRight className="w-5 h-5 text-gray-400" />
             </button>
           ))}
         </div>
-        
-        <button
-          onClick={() => setCurrentScreen('createPayslip')}
-          className="w-full mt-8 bg-[#3366FF] text-white rounded-xl p-4 flex items-center justify-center font-medium shadow-sm"
-        >
-          <Plus className="w-5 h-5 mr-2" />
-          明細データの新規作成
-        </button>
-        
-        <button
-          onClick={() => {
-            setSelectedForDelete(new Set())
-            setCurrentScreen('deletePayslip')
-          }}
-          className="w-full mt-3 bg-red-500 text-white rounded-xl p-4 flex items-center justify-center font-medium shadow-sm"
-        >
-          <Trash2 className="w-5 h-5 mr-2" />
-          明細データの削除
-        </button>
       </div>
+      
+      {showActionMenu && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-end justify-center z-50" onClick={() => setShowActionMenu(false)}>
+          <div className="bg-white rounded-t-2xl w-full max-w-md p-4 pb-8" onClick={(e) => e.stopPropagation()}>
+            <div className="w-12 h-1 bg-gray-300 rounded-full mx-auto mb-4" />
+            <div className="space-y-2">
+              <button
+                onClick={() => {
+                  setShowActionMenu(false)
+                  setCurrentScreen('createPayslip')
+                }}
+                className="w-full bg-white border border-gray-200 rounded-xl p-4 text-left font-medium"
+              >
+                データの追加
+              </button>
+              <button
+                onClick={() => {
+                  setShowActionMenu(false)
+                  setSelectedForDelete(new Set())
+                  setCurrentScreen('deletePayslip')
+                }}
+                className="w-full bg-white border border-gray-200 rounded-xl p-4 text-left font-medium"
+              >
+                データの削除
+              </button>
+              <button
+                onClick={() => {
+                  setShowActionMenu(false)
+                  setEditingPayslip(null)
+                  setCurrentScreen('editPayslip')
+                }}
+                className="w-full bg-white border border-gray-200 rounded-xl p-4 text-left font-medium"
+              >
+                データの編集
+              </button>
+            </div>
+            <button
+              onClick={() => setShowActionMenu(false)}
+              className="w-full mt-4 bg-gray-100 rounded-xl p-4 text-center font-medium text-gray-600"
+            >
+              キャンセル
+            </button>
+          </div>
+        </div>
+      )}
     </div>
   )
 
@@ -660,10 +696,201 @@ function App() {
     </div>
   )
 
+  const handleEditPayslip = (payslip: PayslipItem) => {
+    setEditingPayslip(payslip)
+    setEditPayments([...payslip.payments])
+    setEditDeductions([...payslip.deductions])
+  }
+
+  const handleSaveEdit = () => {
+    if (!editingPayslip) return
+    
+    const totalPayments = editPayments.reduce((sum, p) => sum + p.amount, 0)
+    const totalDeductions = editDeductions.reduce((sum, d) => sum + d.amount, 0)
+    const updatedPayslip: PayslipItem = {
+      ...editingPayslip,
+      netAmount: totalPayments - totalDeductions,
+      grossAmount: totalPayments,
+      totalDeductions: totalDeductions,
+      payments: editPayments.filter(p => p.name && p.amount > 0),
+      deductions: editDeductions.filter(d => d.name && d.amount > 0),
+    }
+    
+    if (editingPayslip.type === 'salary') {
+      setSalaryData(salaryData.map(s => s.id === editingPayslip.id ? updatedPayslip : s))
+    } else {
+      setBonusData(bonusData.map(b => b.id === editingPayslip.id ? updatedPayslip : b))
+    }
+    
+    setEditingPayslip(null)
+    setCurrentScreen('main')
+    setActiveTab('payslip')
+  }
+
+  const renderEditPayslipScreen = () => (
+    <div className="flex flex-col h-full bg-[#F8F9FB]">
+      <div className="bg-[#3366FF] text-white p-4 pt-12">
+        <button onClick={() => {
+          if (editingPayslip) {
+            setEditingPayslip(null)
+          } else {
+            setCurrentScreen('main')
+          }
+        }} className="flex items-center mb-4">
+          <ChevronLeft className="w-5 h-5 mr-1" />
+          <span>戻る</span>
+        </button>
+        <h2 className="text-lg font-medium">{editingPayslip ? '明細データの編集' : '編集する明細を選択'}</h2>
+      </div>
+      
+      {!editingPayslip ? (
+        <div className="flex-1 overflow-auto p-4">
+          <div className="flex bg-gray-200 rounded-lg p-1 mb-4">
+            <button
+              onClick={() => setEditTab('salary')}
+              className={`flex-1 py-2 rounded-md text-sm font-medium transition-colors ${editTab === 'salary' ? 'bg-white text-[#3366FF] shadow-sm' : 'text-gray-600'}`}
+            >
+              給与
+            </button>
+            <button
+              onClick={() => setEditTab('bonus')}
+              className={`flex-1 py-2 rounded-md text-sm font-medium transition-colors ${editTab === 'bonus' ? 'bg-white text-[#3366FF] shadow-sm' : 'text-gray-600'}`}
+            >
+              賞与
+            </button>
+          </div>
+          
+          <div className="space-y-2">
+            {(editTab === 'salary' ? salaryData : bonusData).map((item) => (
+              <button
+                key={item.id}
+                onClick={() => handleEditPayslip(item)}
+                className="w-full bg-white rounded-xl p-4 shadow-sm flex items-center justify-between"
+              >
+                <div className="text-left">
+                  <p className="font-medium">
+                    {item.year}年 {item.month}月{item.type === 'bonus' ? '賞与' : ''}
+                  </p>
+                  <p className="text-[#3366FF] text-lg font-bold">{formatCurrency(item.netAmount)}</p>
+                </div>
+                <ChevronRight className="w-5 h-5 text-gray-400" />
+              </button>
+            ))}
+          </div>
+        </div>
+      ) : (
+        <div className="flex-1 overflow-auto p-4">
+          <div className="bg-white rounded-xl p-4 shadow-sm mb-4">
+            <p className="text-sm text-gray-500 mb-1">編集中</p>
+            <p className="font-medium">{editingPayslip.year}年 {editingPayslip.month}月{editingPayslip.type === 'bonus' ? '賞与' : '給与'}明細</p>
+          </div>
+          
+          <div className="bg-white rounded-xl p-4 shadow-sm mb-4">
+            <label className="text-sm text-gray-500 mb-2 block">支給項目</label>
+            {editPayments.map((payment, idx) => (
+              <div key={idx} className="flex gap-2 mb-2">
+                <input
+                  type="text"
+                  placeholder="項目名"
+                  value={payment.name}
+                  onChange={(e) => {
+                    const updated = [...editPayments]
+                    updated[idx].name = e.target.value
+                    setEditPayments(updated)
+                  }}
+                  className="flex-1 border border-gray-300 rounded-lg p-2"
+                />
+                <input
+                  type="number"
+                  placeholder="金額"
+                  value={payment.amount || ''}
+                  onChange={(e) => {
+                    const updated = [...editPayments]
+                    updated[idx].amount = Number(e.target.value)
+                    setEditPayments(updated)
+                  }}
+                  inputMode="numeric"
+                  className="w-32 border border-gray-300 rounded-lg p-2"
+                />
+                {editPayments.length > 1 && (
+                  <button
+                    onClick={() => setEditPayments(editPayments.filter((_, i) => i !== idx))}
+                    className="text-red-500 p-2"
+                  >
+                    <X className="w-5 h-5" />
+                  </button>
+                )}
+              </div>
+            ))}
+            <button
+              onClick={() => setEditPayments([...editPayments, { name: '', amount: 0 }])}
+              className="text-[#3366FF] text-sm font-medium mt-2"
+            >
+              + 支給項目を追加
+            </button>
+          </div>
+          
+          <div className="bg-white rounded-xl p-4 shadow-sm mb-4">
+            <label className="text-sm text-gray-500 mb-2 block">控除項目</label>
+            {editDeductions.map((deduction, idx) => (
+              <div key={idx} className="flex gap-2 mb-2">
+                <input
+                  type="text"
+                  placeholder="項目名"
+                  value={deduction.name}
+                  onChange={(e) => {
+                    const updated = [...editDeductions]
+                    updated[idx].name = e.target.value
+                    setEditDeductions(updated)
+                  }}
+                  className="flex-1 border border-gray-300 rounded-lg p-2"
+                />
+                <input
+                  type="number"
+                  placeholder="金額"
+                  value={deduction.amount || ''}
+                  onChange={(e) => {
+                    const updated = [...editDeductions]
+                    updated[idx].amount = Number(e.target.value)
+                    setEditDeductions(updated)
+                  }}
+                  inputMode="numeric"
+                  className="w-32 border border-gray-300 rounded-lg p-2"
+                />
+                {editDeductions.length > 1 && (
+                  <button
+                    onClick={() => setEditDeductions(editDeductions.filter((_, i) => i !== idx))}
+                    className="text-red-500 p-2"
+                  >
+                    <X className="w-5 h-5" />
+                  </button>
+                )}
+              </div>
+            ))}
+            <button
+              onClick={() => setEditDeductions([...editDeductions, { name: '', amount: 0 }])}
+              className="text-[#3366FF] text-sm font-medium mt-2"
+            >
+              + 控除項目を追加
+            </button>
+          </div>
+          
+          <button
+            onClick={handleSaveEdit}
+            className="w-full bg-[#3366FF] text-white rounded-xl p-4 font-medium shadow-sm"
+          >
+            保存する
+          </button>
+        </div>
+      )}
+    </div>
+  )
+
   const renderContent = () => {
     if (currentScreen === 'payslipDetail') return renderPayslipDetail()
     if (currentScreen === 'createPayslip') return renderCreatePayslipScreen()
     if (currentScreen === 'deletePayslip') return renderDeletePayslipScreen()
+    if (currentScreen === 'editPayslip') return renderEditPayslipScreen()
     
     switch (activeTab) {
       case 'home':
