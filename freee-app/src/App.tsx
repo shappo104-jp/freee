@@ -61,7 +61,7 @@ const initialAttendanceRecords: AttendanceRecord[] = [
 const DAYS_OF_WEEK = ['日', '月', '火', '水', '木', '金', '土']
 
 function formatCurrency(amount: number): string {
-  return '¥ ' + amount.toLocaleString('ja-JP')
+  return amount.toLocaleString('ja-JP') + '円'
 }
 
 function App() {
@@ -313,18 +313,18 @@ function App() {
             <button
               key={item.id}
               onClick={() => handlePayslipClick(item)}
-              className={`w-full p-4 flex items-center justify-between active:bg-gray-50 transition-colors ${index !== 0 ? 'border-t border-gray-100' : ''}`}
+              className={`w-full p-4 flex items-center active:bg-gray-50 transition-colors ${index !== 0 ? 'border-t border-gray-100' : ''}`}
             >
-              <div className="text-left">
+              <div className="w-12 h-12 rounded-lg bg-[#DCE8FF] flex items-center justify-center mr-4">
+                <span className="text-[#3366FF] font-bold text-lg">{item.month}</span>
+              </div>
+              <div className="flex-1 text-left">
                 <p className="font-bold text-gray-900">
-                  {item.year}年 {item.month}月{item.type === 'bonus' ? '賞与' : ''}
+                  {item.month}月支払分{item.type === 'bonus' ? '（賞与）' : ''}
                 </p>
-                <p className="text-sm text-gray-500">支給日 {item.year}/{String(item.month).padStart(2, '0')}/24</p>
+                <p className="text-sm text-gray-500">{formatCurrency(item.netAmount)}</p>
               </div>
-              <div className="flex items-center">
-                <p className="font-bold text-gray-900 mr-2">{formatCurrency(item.netAmount)}</p>
-                <ChevronRight className="w-5 h-5 text-gray-400" />
-              </div>
+              <ChevronRight className="w-5 h-5 text-gray-400" />
             </button>
           ))}
         </div>
@@ -389,22 +389,6 @@ function App() {
             ))}
           </div>
           
-          <div className="px-4 pt-4">
-            <p className="text-sm text-gray-500 mb-2">勤怠</p>
-          </div>
-          <div className="bg-white mb-4">
-            {[
-              { label: '出勤日数', value: '0日' },
-              { label: '欠勤日数', value: '0日' },
-              { label: '有給取得日数', value: '0日' },
-              { label: '残業時間', value: '0時間' },
-            ].map((item, idx) => (
-              <div key={idx} className={`flex justify-between px-4 py-3 ${idx !== 0 ? 'border-t border-gray-100' : ''}`}>
-                <span className="text-gray-900">{item.label}</span>
-                <span className="text-gray-900">{item.value}</span>
-              </div>
-            ))}
-          </div>
         </div>
       </div>
     )
