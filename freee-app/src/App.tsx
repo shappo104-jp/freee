@@ -61,7 +61,7 @@ const initialAttendanceRecords: AttendanceRecord[] = [
 const DAYS_OF_WEEK = ['日', '月', '火', '水', '木', '金', '土']
 
 function formatCurrency(amount: number): string {
-  return amount.toLocaleString('ja-JP') + '円'
+  return '¥ ' + amount.toLocaleString('ja-JP')
 }
 
 function App() {
