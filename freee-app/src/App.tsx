@@ -196,8 +196,8 @@ function App() {
 
   const renderHomeScreen = () => (
     <div className="flex flex-col h-full bg-[#F8F9FB]">
-      <div className="bg-[#3366FF] text-white p-4 pt-12">
-        <h2 className="text-lg font-medium text-center">ホーム</h2>
+      <div className="bg-[#DCE8FF] p-4 pt-12">
+        <h2 className="text-lg font-medium text-center text-gray-800">ホーム</h2>
       </div>
       
       <div className="p-4">
@@ -238,8 +238,8 @@ function App() {
 
   const renderAttendanceScreen = () => (
     <div className="flex flex-col h-full bg-[#F8F9FB]">
-      <div className="bg-[#3366FF] text-white p-4 pt-12">
-        <h2 className="text-lg font-medium text-center">勤怠</h2>
+      <div className="bg-[#DCE8FF] p-4 pt-12">
+        <h2 className="text-lg font-medium text-center text-gray-800">勤怠</h2>
       </div>
       
       <div className="p-4">
@@ -289,8 +289,8 @@ function App() {
 
   const renderPayslipList = () => (
     <div className="flex flex-col h-full bg-[#F8F9FB]">
-      <div className="bg-[#3366FF] text-white p-4 pt-12">
-        <h2 className="text-lg font-medium text-center">明細</h2>
+      <div className="bg-[#DCE8FF] p-4 pt-12">
+        <h2 className="text-lg font-medium text-center text-gray-800">明細</h2>
       </div>
       
       <div className="p-4">
@@ -335,12 +335,12 @@ function App() {
     
     return (
       <div className="flex flex-col h-full bg-[#F8F9FB]">
-        <div className="bg-[#3366FF] text-white p-4 pt-12">
-          <button onClick={() => setCurrentScreen('main')} className="flex items-center mb-4">
+        <div className="bg-[#DCE8FF] p-4 pt-12">
+          <button onClick={() => setCurrentScreen('main')} className="flex items-center mb-4 text-gray-800">
             <ChevronLeft className="w-5 h-5 mr-1" />
             <span>戻る</span>
           </button>
-          <h2 className="text-lg font-medium">
+          <h2 className="text-lg font-medium text-gray-800">
             {selectedPayslip.year}年{selectedPayslip.month}月{selectedPayslip.type === 'bonus' ? '賞与' : '給与'}明細
           </h2>
         </div>
@@ -389,14 +389,14 @@ function App() {
 
   const renderOthersScreen = () => (
     <div className="flex flex-col h-full bg-[#F8F9FB]">
-      <div className="bg-[#3366FF] text-white p-4 pt-12">
+      <div className="bg-[#DCE8FF] p-4 pt-12">
         <div className="flex items-center justify-between">
-          <h2 className="text-lg font-medium">その他</h2>
+          <h2 className="text-lg font-medium text-gray-800">その他</h2>
           <button
             onClick={() => setShowActionMenu(true)}
             className="p-2"
           >
-            <Plus className="w-6 h-6 text-white" />
+            <Plus className="w-6 h-6 text-gray-800" />
           </button>
         </div>
       </div>
@@ -465,12 +465,12 @@ function App() {
 
   const renderCreatePayslipScreen = () => (
     <div className="flex flex-col h-full bg-[#F8F9FB]">
-      <div className="bg-[#3366FF] text-white p-4 pt-12">
-        <button onClick={() => setCurrentScreen('main')} className="flex items-center mb-4">
+      <div className="bg-[#DCE8FF] p-4 pt-12">
+        <button onClick={() => setCurrentScreen('main')} className="flex items-center mb-4 text-gray-800">
           <ChevronLeft className="w-5 h-5 mr-1" />
           <span>戻る</span>
         </button>
-        <h2 className="text-lg font-medium">明細データの新規作成</h2>
+        <h2 className="text-lg font-medium text-gray-800">明細データの新規作成</h2>
       </div>
       
       <div className="flex-1 overflow-auto p-4">
@@ -618,12 +618,12 @@ function App() {
 
   const renderDeletePayslipScreen = () => (
     <div className="flex flex-col h-full bg-[#F8F9FB]">
-      <div className="bg-[#3366FF] text-white p-4 pt-12">
-        <button onClick={() => setCurrentScreen('main')} className="flex items-center mb-4">
+      <div className="bg-[#DCE8FF] p-4 pt-12">
+        <button onClick={() => setCurrentScreen('main')} className="flex items-center mb-4 text-gray-800">
           <ChevronLeft className="w-5 h-5 mr-1" />
           <span>戻る</span>
         </button>
-        <h2 className="text-lg font-medium">明細データの削除</h2>
+        <h2 className="text-lg font-medium text-gray-800">明細データの削除</h2>
       </div>
       
       <div className="flex-1 overflow-auto p-4">
@@ -742,18 +742,18 @@ function App() {
 
   const renderEditPayslipScreen = () => (
     <div className="flex flex-col h-full bg-[#F8F9FB]">
-      <div className="bg-[#3366FF] text-white p-4 pt-12">
+      <div className="bg-[#DCE8FF] p-4 pt-12">
         <button onClick={() => {
           if (editingPayslip) {
             setEditingPayslip(null)
           } else {
             setCurrentScreen('main')
           }
-        }} className="flex items-center mb-4">
+        }} className="flex items-center mb-4 text-gray-800">
           <ChevronLeft className="w-5 h-5 mr-1" />
           <span>戻る</span>
         </button>
-        <h2 className="text-lg font-medium">{editingPayslip ? '明細データの編集' : '編集する明細を選択'}</h2>
+        <h2 className="text-lg font-medium text-gray-800">{editingPayslip ? '明細データの編集' : '編集する明細を選択'}</h2>
       </div>
       
       {!editingPayslip ? (
