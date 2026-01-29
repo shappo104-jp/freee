@@ -196,10 +196,14 @@ function App() {
 
   const renderHomeScreen = () => (
     <div className="flex flex-col h-full bg-[#F8F9FB]">
-      <div className="p-4 pt-12">
+      <div className="bg-[#3366FF] text-white p-4 pt-12">
+        <h2 className="text-lg font-medium text-center">ホーム</h2>
+      </div>
+      
+      <div className="p-4">
         <div className="text-center mb-6">
-          <p className="text-gray-600 text-sm">{formatDate(currentTime)}</p>
-          <p className="text-4xl font-bold text-[#3366FF]">{formatTime(currentTime)}</p>
+          <p className="text-gray-500 text-sm">{formatDate(currentTime)}</p>
+          <p className="text-4xl font-bold">{formatTime(currentTime)}</p>
         </div>
         
         <div className="grid grid-cols-2 gap-3 mb-6">
@@ -234,7 +238,11 @@ function App() {
 
   const renderAttendanceScreen = () => (
     <div className="flex flex-col h-full bg-[#F8F9FB]">
-      <div className="p-4 pt-12">
+      <div className="bg-[#3366FF] text-white p-4 pt-12">
+        <h2 className="text-lg font-medium text-center">勤怠</h2>
+      </div>
+      
+      <div className="p-4">
         <div className="bg-white rounded-xl p-4 shadow-sm mb-4">
           <div className="flex items-center justify-between mb-4">
             <button onClick={() => setCalendarDate(new Date(calendarDate.getFullYear(), calendarDate.getMonth() - 1))}>
@@ -281,7 +289,11 @@ function App() {
 
   const renderPayslipList = () => (
     <div className="flex flex-col h-full bg-[#F8F9FB]">
-      <div className="p-4 pt-12">
+      <div className="bg-[#3366FF] text-white p-4 pt-12">
+        <h2 className="text-lg font-medium text-center">明細</h2>
+      </div>
+      
+      <div className="p-4">
         <div className="flex bg-gray-200 rounded-lg p-1 mb-4">
           <button
             onClick={() => setPayslipTab('salary')}
@@ -377,25 +389,27 @@ function App() {
 
   const renderOthersScreen = () => (
     <div className="flex flex-col h-full bg-[#F8F9FB]">
-      <div className="p-4 pt-12">
-        <div className="flex items-center justify-between mb-6">
-          <h2 className="text-xl font-bold">その他</h2>
+      <div className="bg-[#3366FF] text-white p-4 pt-12">
+        <div className="flex items-center justify-between">
+          <h2 className="text-lg font-medium">その他</h2>
           <button
             onClick={() => setShowActionMenu(true)}
-            className="w-10 h-10 bg-[#3366FF] rounded-full flex items-center justify-center shadow-sm"
+            className="p-2"
           >
             <Plus className="w-6 h-6 text-white" />
           </button>
         </div>
-        
-        <div className="space-y-3">
+      </div>
+      
+      <div className="p-4">
+        <div className="bg-white rounded-xl overflow-hidden shadow-sm">
           {[
             { label: 'プロフィール' },
             { label: '通知設定' },
             { label: 'ヘルプ' },
             { label: 'お問い合わせ' },
-          ].map((item, idx) => (
-            <button key={idx} className="w-full bg-white rounded-xl p-4 shadow-sm flex items-center justify-between">
+          ].map((item, idx, arr) => (
+            <button key={idx} className={`w-full p-4 flex items-center justify-between ${idx < arr.length - 1 ? 'border-b border-gray-100' : ''}`}>
               <span>{item.label}</span>
               <ChevronRight className="w-5 h-5 text-gray-400" />
             </button>
@@ -404,16 +418,15 @@ function App() {
       </div>
       
       {showActionMenu && (
-        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-end justify-center z-50" onClick={() => setShowActionMenu(false)}>
-          <div className="bg-white rounded-t-2xl w-full max-w-md p-4 pb-8" onClick={(e) => e.stopPropagation()}>
-            <div className="w-12 h-1 bg-gray-300 rounded-full mx-auto mb-4" />
-            <div className="space-y-2">
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-end justify-center z-50 p-4 pb-8" onClick={() => setShowActionMenu(false)}>
+          <div className="w-full max-w-md space-y-2" onClick={(e) => e.stopPropagation()}>
+            <div className="bg-white rounded-xl overflow-hidden">
               <button
                 onClick={() => {
                   setShowActionMenu(false)
                   setCurrentScreen('createPayslip')
                 }}
-                className="w-full bg-white border border-gray-200 rounded-xl p-4 text-left font-medium"
+                className="w-full p-4 text-center text-[#3366FF] font-medium border-b border-gray-100"
               >
                 データの追加
               </button>
@@ -423,7 +436,7 @@ function App() {
                   setSelectedForDelete(new Set())
                   setCurrentScreen('deletePayslip')
                 }}
-                className="w-full bg-white border border-gray-200 rounded-xl p-4 text-left font-medium"
+                className="w-full p-4 text-center text-[#3366FF] font-medium border-b border-gray-100"
               >
                 データの削除
               </button>
@@ -433,14 +446,14 @@ function App() {
                   setEditingPayslip(null)
                   setCurrentScreen('editPayslip')
                 }}
-                className="w-full bg-white border border-gray-200 rounded-xl p-4 text-left font-medium"
+                className="w-full p-4 text-center text-[#3366FF] font-medium"
               >
                 データの編集
               </button>
             </div>
             <button
               onClick={() => setShowActionMenu(false)}
-              className="w-full mt-4 bg-gray-100 rounded-xl p-4 text-center font-medium text-gray-600"
+              className="w-full bg-white rounded-xl p-4 text-center text-[#3366FF] font-bold"
             >
               キャンセル
             </button>
