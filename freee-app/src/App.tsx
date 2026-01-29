@@ -60,6 +60,32 @@ const initialAttendanceRecords: AttendanceRecord[] = [
 
 const DAYS_OF_WEEK = ['日', '月', '火', '水', '木', '金', '土']
 
+const STORAGE_KEYS = {
+  salaryData: 'freee_salary_data',
+  bonusData: 'freee_bonus_data',
+  attendanceRecords: 'freee_attendance_records'
+}
+
+function loadFromStorage<T>(key: string, defaultValue: T): T {
+  try {
+    const stored = localStorage.getItem(key)
+    if (stored) {
+      return JSON.parse(stored) as T
+    }
+  } catch (e) {
+    console.error('Failed to load from localStorage:', e)
+  }
+  return defaultValue
+}
+
+function saveToStorage<T>(key: string, value: T): void {
+  try {
+    localStorage.setItem(key, JSON.stringify(value))
+  } catch (e) {
+    console.error('Failed to save to localStorage:', e)
+  }
+}
+
 function formatCurrency(amount: number): string {
   return amount.toLocaleString('ja-JP') + '円'
 }
@@ -70,9 +96,9 @@ function App() {
   const [payslipTab, setPayslipTab] = useState<PayslipTabType>('salary')
   const [currentScreen, setCurrentScreen] = useState<ScreenType>('main')
   const [selectedPayslip, setSelectedPayslip] = useState<PayslipItem | null>(null)
-  const [salaryData, setSalaryData] = useState<PayslipItem[]>(initialSalaryData)
-  const [bonusData, setBonusData] = useState<PayslipItem[]>(initialBonusData)
-  const [attendanceRecords, setAttendanceRecords] = useState<AttendanceRecord[]>(initialAttendanceRecords)
+  const [salaryData, setSalaryData] = useState<PayslipItem[]>(() => loadFromStorage(STORAGE_KEYS.salaryData, initialSalaryData))
+  const [bonusData, setBonusData] = useState<PayslipItem[]>(() => loadFromStorage(STORAGE_KEYS.bonusData, initialBonusData))
+  const [attendanceRecords, setAttendanceRecords] = useState<AttendanceRecord[]>(() => loadFromStorage(STORAGE_KEYS.attendanceRecords, initialAttendanceRecords))
   const [calendarDate, setCalendarDate] = useState(new Date())
   const [selectedForDelete, setSelectedForDelete] = useState<Set<string>>(new Set())
   const [deleteTab, setDeleteTab] = useState<PayslipTabType>('salary')
@@ -95,6 +121,18 @@ function App() {
     }, 1000)
     return () => clearInterval(timer)
   }, [])
+
+  useEffect(() => {
+    saveToStorage(STORAGE_KEYS.salaryData, salaryData)
+  }, [salaryData])
+
+  useEffect(() => {
+    saveToStorage(STORAGE_KEYS.bonusData, bonusData)
+  }, [bonusData])
+
+  useEffect(() => {
+    saveToStorage(STORAGE_KEYS.attendanceRecords, attendanceRecords)
+  }, [attendanceRecords])
 
   const formatDate = (date: Date) => {
     const year = date.getFullYear()
