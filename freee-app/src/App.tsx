@@ -289,40 +289,42 @@ function App() {
 
   const renderPayslipList = () => (
     <div className="flex flex-col h-full bg-[#F8F9FB]">
-      <div className="bg-[#DCE8FF] p-4 pt-12">
-        <h2 className="text-lg font-medium text-center text-gray-800">明細</h2>
-      </div>
-      
-      <div className="p-4">
-        <div className="flex bg-gray-200 rounded-lg p-1 mb-4">
+      <div className="bg-[#DCE8FF] pt-12 pb-0">
+        <h2 className="text-lg font-bold text-center text-gray-900 pb-4">明細</h2>
+        <div className="flex">
           <button
             onClick={() => setPayslipTab('salary')}
-            className={`flex-1 py-2 rounded-md text-sm font-medium transition-colors ${payslipTab === 'salary' ? 'bg-white text-[#3366FF] shadow-sm' : 'text-gray-600'}`}
+            className={`flex-1 py-3 text-sm font-medium transition-colors ${payslipTab === 'salary' ? 'text-[#3366FF] border-b-2 border-[#3366FF]' : 'text-gray-500'}`}
           >
             給与
           </button>
           <button
             onClick={() => setPayslipTab('bonus')}
-            className={`flex-1 py-2 rounded-md text-sm font-medium transition-colors ${payslipTab === 'bonus' ? 'bg-white text-[#3366FF] shadow-sm' : 'text-gray-600'}`}
+            className={`flex-1 py-3 text-sm font-medium transition-colors ${payslipTab === 'bonus' ? 'text-[#3366FF] border-b-2 border-[#3366FF]' : 'text-gray-500'}`}
           >
             賞与
           </button>
         </div>
-        
-        <div className="space-y-2">
-          {(payslipTab === 'salary' ? salaryData : bonusData).map((item) => (
+      </div>
+      
+      <div className="flex-1 overflow-auto">
+        <div className="bg-white">
+          {(payslipTab === 'salary' ? salaryData : bonusData).map((item, index) => (
             <button
               key={item.id}
               onClick={() => handlePayslipClick(item)}
-              className="w-full bg-white rounded-xl p-4 shadow-sm flex items-center justify-between active:bg-gray-50 transition-colors"
+              className={`w-full p-4 flex items-center justify-between active:bg-gray-50 transition-colors ${index !== 0 ? 'border-t border-gray-100' : ''}`}
             >
               <div className="text-left">
-                <p className="font-medium">
+                <p className="font-bold text-gray-900">
                   {item.year}年 {item.month}月{item.type === 'bonus' ? '賞与' : ''}
                 </p>
-                <p className="text-[#3366FF] text-lg font-bold">{formatCurrency(item.netAmount)}</p>
+                <p className="text-sm text-gray-500">支給日 {item.year}/{String(item.month).padStart(2, '0')}/24</p>
               </div>
-              <ChevronRight className="w-5 h-5 text-gray-400" />
+              <div className="flex items-center">
+                <p className="font-bold text-gray-900 mr-2">{formatCurrency(item.netAmount)}</p>
+                <ChevronRight className="w-5 h-5 text-gray-400" />
+              </div>
             </button>
           ))}
         </div>
@@ -336,51 +338,72 @@ function App() {
     return (
       <div className="flex flex-col h-full bg-[#F8F9FB]">
         <div className="bg-[#DCE8FF] p-4 pt-12">
-          <button onClick={() => setCurrentScreen('main')} className="flex items-center mb-4 text-gray-800">
+          <button onClick={() => setCurrentScreen('main')} className="flex items-center mb-2 text-[#3366FF]">
             <ChevronLeft className="w-5 h-5 mr-1" />
             <span>戻る</span>
           </button>
-          <h2 className="text-lg font-medium text-gray-800">
+          <h2 className="text-lg font-bold text-center text-gray-900">
             {selectedPayslip.year}年{selectedPayslip.month}月{selectedPayslip.type === 'bonus' ? '賞与' : '給与'}明細
           </h2>
         </div>
         
-        <div className="flex-1 overflow-auto p-4">
-          <div className="bg-white rounded-xl shadow-sm overflow-hidden">
-            <div className="p-6 border-b border-gray-100">
-              <p className="text-sm text-gray-500 mb-1">差引総支給額</p>
-              <p className="text-3xl font-bold text-[#3366FF]">{formatCurrency(selectedPayslip.netAmount)}</p>
-              <div className="flex justify-between mt-4 text-sm">
-                <div>
-                  <p className="text-gray-500">総支給額</p>
-                  <p className="font-medium">{formatCurrency(selectedPayslip.grossAmount)}</p>
-                </div>
-                <div className="text-right">
-                  <p className="text-gray-500">総控除額</p>
-                  <p className="font-medium">{formatCurrency(selectedPayslip.totalDeductions)}</p>
-                </div>
+        <div className="flex-1 overflow-auto">
+          <div className="bg-white py-8 px-4">
+            <p className="text-sm text-gray-500 text-center mb-2">差引総支給額</p>
+            <p className="text-3xl font-bold text-gray-900 text-center">{formatCurrency(selectedPayslip.netAmount)}</p>
+            <p className="text-sm text-gray-500 text-center mt-2">支給日 {selectedPayslip.year}/{String(selectedPayslip.month).padStart(2, '0')}/24</p>
+            
+            <div className="mt-6 pt-4 border-t border-gray-100">
+              <div className="flex justify-between py-2">
+                <span className="text-gray-600">総支給額</span>
+                <span className="font-medium text-gray-900">{formatCurrency(selectedPayslip.grossAmount)}</span>
+              </div>
+              <div className="flex justify-between py-2">
+                <span className="text-gray-600">総控除額</span>
+                <span className="font-medium text-gray-900">{formatCurrency(selectedPayslip.totalDeductions)}</span>
               </div>
             </div>
-            
-            <div className="p-4 border-b border-gray-100">
-              <h3 className="text-sm font-medium text-gray-500 mb-3">支給</h3>
-              {selectedPayslip.payments.map((payment, idx) => (
-                <div key={idx} className="flex justify-between py-2">
-                  <span className="text-gray-600">{payment.name}</span>
-                  <span className="font-medium">{formatCurrency(payment.amount)}</span>
-                </div>
-              ))}
-            </div>
-            
-            <div className="p-4">
-              <h3 className="text-sm font-medium text-gray-500 mb-3">控除</h3>
-              {selectedPayslip.deductions.map((deduction, idx) => (
-                <div key={idx} className="flex justify-between py-2">
-                  <span className="text-gray-600">{deduction.name}</span>
-                  <span className="font-medium">{formatCurrency(deduction.amount)}</span>
-                </div>
-              ))}
-            </div>
+          </div>
+          
+          <div className="px-4 pt-4">
+            <p className="text-sm text-gray-500 mb-2">支給</p>
+          </div>
+          <div className="bg-white">
+            {selectedPayslip.payments.map((payment, idx) => (
+              <div key={idx} className={`flex justify-between px-4 py-3 ${idx !== 0 ? 'border-t border-gray-100' : ''}`}>
+                <span className="text-gray-900">{payment.name}</span>
+                <span className="text-gray-900">{formatCurrency(payment.amount)}</span>
+              </div>
+            ))}
+          </div>
+          
+          <div className="px-4 pt-4">
+            <p className="text-sm text-gray-500 mb-2">控除</p>
+          </div>
+          <div className="bg-white">
+            {selectedPayslip.deductions.map((deduction, idx) => (
+              <div key={idx} className={`flex justify-between px-4 py-3 ${idx !== 0 ? 'border-t border-gray-100' : ''}`}>
+                <span className="text-gray-900">{deduction.name}</span>
+                <span className="text-gray-900">{formatCurrency(deduction.amount)}</span>
+              </div>
+            ))}
+          </div>
+          
+          <div className="px-4 pt-4">
+            <p className="text-sm text-gray-500 mb-2">勤怠</p>
+          </div>
+          <div className="bg-white mb-4">
+            {[
+              { label: '出勤日数', value: '0日' },
+              { label: '欠勤日数', value: '0日' },
+              { label: '有給取得日数', value: '0日' },
+              { label: '残業時間', value: '0時間' },
+            ].map((item, idx) => (
+              <div key={idx} className={`flex justify-between px-4 py-3 ${idx !== 0 ? 'border-t border-gray-100' : ''}`}>
+                <span className="text-gray-900">{item.label}</span>
+                <span className="text-gray-900">{item.value}</span>
+              </div>
+            ))}
           </div>
         </div>
       </div>
