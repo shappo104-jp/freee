@@ -307,27 +307,40 @@ function App() {
         </div>
       </div>
       
-      <div className="flex-1 overflow-auto">
-        <div className="bg-white">
-          {(payslipTab === 'salary' ? salaryData : bonusData).map((item, index) => (
-            <button
-              key={item.id}
-              onClick={() => handlePayslipClick(item)}
-              className={`w-full p-4 flex items-center active:bg-gray-50 transition-colors ${index !== 0 ? 'border-t border-gray-100' : ''}`}
-            >
-              <div className="w-12 h-12 rounded-lg bg-[#DCE8FF] flex items-center justify-center mr-4">
-                <span className="text-[#3366FF] font-bold text-lg">{item.month}</span>
+      <div className="flex-1 overflow-auto p-4">
+        {(() => {
+          const data = payslipTab === 'salary' ? salaryData : bonusData
+          const groupedByYear = data.reduce((acc, item) => {
+            if (!acc[item.year]) acc[item.year] = []
+            acc[item.year].push(item)
+            return acc
+          }, {} as Record<number, typeof data>)
+          const years = Object.keys(groupedByYear).map(Number).sort((a, b) => b - a)
+          
+          return years.map((year) => (
+            <div key={year} className="mb-4">
+              <p className="text-sm text-gray-500 mb-2">{year}年</p>
+              <div className="bg-white rounded-xl overflow-hidden">
+                {groupedByYear[year].map((item, index) => (
+                  <button
+                    key={item.id}
+                    onClick={() => handlePayslipClick(item)}
+                    className={`w-full p-4 flex items-center active:bg-gray-50 transition-colors ${index !== 0 ? 'border-t border-gray-100' : ''}`}
+                  >
+                    <div className="w-12 h-12 rounded-lg bg-[#DCE8FF] flex items-center justify-center mr-4">
+                      <span className="text-[#3366FF] font-bold text-lg">{item.month}</span>
+                    </div>
+                    <div className="flex-1 text-left">
+                      <p className="font-bold text-gray-900">{item.month}月支払分</p>
+                      <p className="text-sm text-gray-500">{formatCurrency(item.netAmount)}</p>
+                    </div>
+                    <ChevronRight className="w-5 h-5 text-gray-400" />
+                  </button>
+                ))}
               </div>
-              <div className="flex-1 text-left">
-                <p className="font-bold text-gray-900">
-                  {item.month}月支払分{item.type === 'bonus' ? '（賞与）' : ''}
-                </p>
-                <p className="text-sm text-gray-500">{formatCurrency(item.netAmount)}</p>
-              </div>
-              <ChevronRight className="w-5 h-5 text-gray-400" />
-            </button>
-          ))}
-        </div>
+            </div>
+          ))
+        })()}
       </div>
     </div>
   )
@@ -351,7 +364,7 @@ function App() {
           <div className="bg-white py-8 px-4">
             <p className="text-sm text-gray-500 text-center mb-2">差引総支給額</p>
             <p className="text-3xl font-bold text-gray-900 text-center">{formatCurrency(selectedPayslip.netAmount)}</p>
-            <p className="text-sm text-gray-500 text-center mt-2">支給日 {selectedPayslip.year}/{String(selectedPayslip.month).padStart(2, '0')}/24</p>
+            <p className="text-sm text-gray-500 text-center mt-2">支給日 {selectedPayslip.year}/{String(selectedPayslip.month).padStart(2, '0')}/{new Date(selectedPayslip.year, selectedPayslip.month, 0).getDate()}</p>
             
             <div className="mt-6 pt-4 border-t border-gray-100">
               <div className="flex justify-between py-2">
