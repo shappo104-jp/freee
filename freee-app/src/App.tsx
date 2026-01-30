@@ -1,6 +1,8 @@
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useCallback } from 'react'
 import './App.css'
 import { Home, Clock, FileText, Menu, ChevronRight, ChevronLeft, Plus, X } from 'lucide-react'
+
+const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:8001'
 
 type TabType = 'home' | 'attendance' | 'payslip' | 'others'
 type PayslipTabType = 'salary' | 'bonus'
@@ -135,15 +137,92 @@ function formatCurrency(amount: number): string {
   return amount.toLocaleString('ja-JP') + '円'
 }
 
+async function fetchPayslips(): Promise<PayslipItem[]> {
+  try {
+    const response = await fetch(`${API_URL}/payslips`)
+    if (!response.ok) throw new Error('Failed to fetch payslips')
+    return await response.json()
+  } catch (e) {
+    console.error('Failed to fetch payslips:', e)
+    return []
+  }
+}
+
+async function createPayslipAPI(payslip: Omit<PayslipItem, 'netAmount' | 'grossAmount' | 'totalDeductions'>): Promise<PayslipItem | null> {
+  try {
+    const response = await fetch(`${API_URL}/payslips`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(payslip)
+    })
+    if (!response.ok) throw new Error('Failed to create payslip')
+    return await response.json()
+  } catch (e) {
+    console.error('Failed to create payslip:', e)
+    return null
+  }
+}
+
+async function updatePayslipAPI(id: string, payslip: Partial<PayslipItem>): Promise<PayslipItem | null> {
+  try {
+    const response = await fetch(`${API_URL}/payslips/${id}`, {
+      method: 'PUT',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(payslip)
+    })
+    if (!response.ok) throw new Error('Failed to update payslip')
+    return await response.json()
+  } catch (e) {
+    console.error('Failed to update payslip:', e)
+    return null
+  }
+}
+
+async function deletePayslipAPI(id: string): Promise<boolean> {
+  try {
+    const response = await fetch(`${API_URL}/payslips/${id}`, {
+      method: 'DELETE'
+    })
+    return response.ok
+  } catch (e) {
+    console.error('Failed to delete payslip:', e)
+    return false
+  }
+}
+
+async function bulkCreatePayslipsAPI(payslips: PayslipItem[]): Promise<PayslipItem[]> {
+  try {
+    const response = await fetch(`${API_URL}/payslips/bulk`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(payslips.map(p => ({
+        id: p.id,
+        year: p.year,
+        month: p.month,
+        type: p.type,
+        payments: p.payments,
+        deductions: p.deductions
+      })))
+    })
+    if (!response.ok) throw new Error('Failed to bulk create payslips')
+    return await response.json()
+  } catch (e) {
+    console.error('Failed to bulk create payslips:', e)
+    return []
+  }
+}
+
 function App() {
   const [activeTab, setActiveTab] = useState<TabType>('home')
   const [currentTime, setCurrentTime] = useState(new Date())
   const [payslipTab, setPayslipTab] = useState<PayslipTabType>('salary')
   const [currentScreen, setCurrentScreen] = useState<ScreenType>('main')
   const [selectedPayslip, setSelectedPayslip] = useState<PayslipItem | null>(null)
-  const [salaryData, setSalaryData] = useState<PayslipItem[]>(() => loadFromStorage(STORAGE_KEYS.salaryData, initialSalaryData))
-  const [bonusData, setBonusData] = useState<PayslipItem[]>(() => loadFromStorage(STORAGE_KEYS.bonusData, initialBonusData))
+  const [salaryData, setSalaryData] = useState<PayslipItem[]>([])
+  const [bonusData, setBonusData] = useState<PayslipItem[]>([])
   const [attendanceRecords, setAttendanceRecords] = useState<AttendanceRecord[]>(() => loadFromStorage(STORAGE_KEYS.attendanceRecords, initialAttendanceRecords))
+  const [isLoading, setIsLoading] = useState(true)
+  const [isInitialized, setIsInitialized] = useState(false)
   const [calendarDate, setCalendarDate] = useState(new Date())
   const [selectedForDelete, setSelectedForDelete] = useState<Set<string>>(new Set())
   const [deleteTab, setDeleteTab] = useState<PayslipTabType>('salary')
@@ -176,20 +255,44 @@ function App() {
   const [editPayments, setEditPayments] = useState<{ name: string; amount: number }[]>([])
   const [editDeductions, setEditDeductions] = useState<{ name: string; amount: number }[]>([])
 
+  const loadPayslipsFromAPI = useCallback(async () => {
+    setIsLoading(true)
+    try {
+      const payslips = await fetchPayslips()
+      if (payslips.length === 0 && !isInitialized) {
+        const allInitialData = [...initialSalaryData, ...initialBonusData]
+        const createdPayslips = await bulkCreatePayslipsAPI(allInitialData)
+        if (createdPayslips.length > 0) {
+          setSalaryData(createdPayslips.filter(p => p.type === 'salary'))
+          setBonusData(createdPayslips.filter(p => p.type === 'bonus'))
+        } else {
+          setSalaryData(initialSalaryData)
+          setBonusData(initialBonusData)
+        }
+      } else {
+        setSalaryData(payslips.filter(p => p.type === 'salary'))
+        setBonusData(payslips.filter(p => p.type === 'bonus'))
+      }
+      setIsInitialized(true)
+    } catch (e) {
+      console.error('Failed to load payslips:', e)
+      setSalaryData(initialSalaryData)
+      setBonusData(initialBonusData)
+    } finally {
+      setIsLoading(false)
+    }
+  }, [isInitialized])
+
+  useEffect(() => {
+    loadPayslipsFromAPI()
+  }, [loadPayslipsFromAPI])
+
   useEffect(() => {
     const timer = setInterval(() => {
       setCurrentTime(new Date())
     }, 1000)
     return () => clearInterval(timer)
   }, [])
-
-  useEffect(() => {
-    saveToStorage(STORAGE_KEYS.salaryData, salaryData)
-  }, [salaryData])
-
-  useEffect(() => {
-    saveToStorage(STORAGE_KEYS.bonusData, bonusData)
-  }, [bonusData])
 
   useEffect(() => {
     saveToStorage(STORAGE_KEYS.attendanceRecords, attendanceRecords)
@@ -240,56 +343,59 @@ function App() {
     setCurrentScreen('payslipDetail')
   }
 
-  const handleCreatePayslip = () => {
-    const totalPayments = newPayments.reduce((sum, p) => sum + p.amount, 0)
-    const totalDeductions = newDeductions.reduce((sum, d) => sum + d.amount, 0)
-    const newPayslip: PayslipItem = {
+  const handleCreatePayslip = async () => {
+    const newPayslipData = {
       id: `${newPayslipType === 'salary' ? 's' : 'b'}${Date.now()}`,
       year: newPayslipYear,
       month: newPayslipMonth,
       type: newPayslipType,
-      netAmount: totalPayments - totalDeductions,
-      grossAmount: totalPayments,
-      totalDeductions: totalDeductions,
-            payments: newPayments.filter(p => p.name),
-            deductions: newDeductions.filter(d => d.name),
+      payments: newPayments.filter(p => p.name),
+      deductions: newDeductions.filter(d => d.name),
     }
     
-    if (newPayslipType === 'salary') {
-      setSalaryData([newPayslip, ...salaryData].sort((a, b) => {
-        if (a.year !== b.year) return b.year - a.year
-        return b.month - a.month
-      }))
-    } else {
-      setBonusData([newPayslip, ...bonusData].sort((a, b) => {
-        if (a.year !== b.year) return b.year - a.year
-        return b.month - a.month
-      }))
+    const createdPayslip = await createPayslipAPI(newPayslipData)
+    if (createdPayslip) {
+      if (newPayslipType === 'salary') {
+        setSalaryData([createdPayslip, ...salaryData].sort((a, b) => {
+          if (a.year !== b.year) return b.year - a.year
+          return b.month - a.month
+        }))
+      } else {
+        setBonusData([createdPayslip, ...bonusData].sort((a, b) => {
+          if (a.year !== b.year) return b.year - a.year
+          return b.month - a.month
+        }))
+      }
     }
     
-        setNewPayments([
-          { name: '月給', amount: 0 },
-          { name: '残業手当', amount: 0 },
-          { name: '勤怠控除', amount: 0 },
-          { name: '非課税通勤手当', amount: 0 },
-          { name: '課税通勤手当', amount: 0 },
-          { name: '福利厚生費', amount: 0 },
-          { name: '能力給', amount: 0 },
-          { name: '見込み残業手当', amount: 0 },
-        ])
-        setNewDeductions([
-          { name: '健康保険料', amount: 0 },
-          { name: '介護保険料', amount: 0 },
-          { name: '厚生年金保険料', amount: 0 },
-          { name: '雇用保険料', amount: 0 },
-          { name: '所得税', amount: 0 },
-          { name: '住民税', amount: 0 },
-        ])
+    setNewPayments([
+      { name: '月給', amount: 0 },
+      { name: '残業手当', amount: 0 },
+      { name: '勤怠控除', amount: 0 },
+      { name: '非課税通勤手当', amount: 0 },
+      { name: '課税通勤手当', amount: 0 },
+      { name: '福利厚生費', amount: 0 },
+      { name: '能力給', amount: 0 },
+      { name: '見込み残業手当', amount: 0 },
+    ])
+    setNewDeductions([
+      { name: '健康保険料', amount: 0 },
+      { name: '介護保険料', amount: 0 },
+      { name: '厚生年金保険料', amount: 0 },
+      { name: '雇用保険料', amount: 0 },
+      { name: '所得税', amount: 0 },
+      { name: '住民税', amount: 0 },
+    ])
     setCurrentScreen('main')
     setActiveTab('payslip')
   }
 
-  const handleDeleteSelected = () => {
+  const handleDeleteSelected = async () => {
+    const idsToDelete = Array.from(selectedForDelete)
+    for (const id of idsToDelete) {
+      await deletePayslipAPI(id)
+    }
+    
     if (deleteTab === 'salary') {
       setSalaryData(salaryData.filter(s => !selectedForDelete.has(s.id)))
     } else {
@@ -850,24 +956,21 @@ function App() {
     setEditDeductions([...payslip.deductions])
   }
 
-  const handleSaveEdit = () => {
+  const handleSaveEdit = async () => {
     if (!editingPayslip) return
     
-    const totalPayments = editPayments.reduce((sum, p) => sum + p.amount, 0)
-    const totalDeductions = editDeductions.reduce((sum, d) => sum + d.amount, 0)
-    const updatedPayslip: PayslipItem = {
-      ...editingPayslip,
-      netAmount: totalPayments - totalDeductions,
-      grossAmount: totalPayments,
-      totalDeductions: totalDeductions,
-            payments: editPayments.filter(p => p.name),
-            deductions: editDeductions.filter(d => d.name),
+    const updateData = {
+      payments: editPayments.filter(p => p.name),
+      deductions: editDeductions.filter(d => d.name),
     }
     
-    if (editingPayslip.type === 'salary') {
-      setSalaryData(salaryData.map(s => s.id === editingPayslip.id ? updatedPayslip : s))
-    } else {
-      setBonusData(bonusData.map(b => b.id === editingPayslip.id ? updatedPayslip : b))
+    const updatedPayslip = await updatePayslipAPI(editingPayslip.id, updateData)
+    if (updatedPayslip) {
+      if (editingPayslip.type === 'salary') {
+        setSalaryData(salaryData.map(s => s.id === editingPayslip.id ? updatedPayslip : s))
+      } else {
+        setBonusData(bonusData.map(b => b.id === editingPayslip.id ? updatedPayslip : b))
+      }
     }
     
     setEditingPayslip(null)
@@ -1035,6 +1138,14 @@ function App() {
   )
 
   const renderContent = () => {
+    if (isLoading && activeTab === 'payslip') {
+      return (
+        <div className="flex flex-col h-full bg-[#F8F9FB] items-center justify-center">
+          <div className="text-gray-500">読み込み中...</div>
+        </div>
+      )
+    }
+    
     if (currentScreen === 'payslipDetail') return renderPayslipDetail()
     if (currentScreen === 'createPayslip') return renderCreatePayslipScreen()
     if (currentScreen === 'deletePayslip') return renderDeletePayslipScreen()
