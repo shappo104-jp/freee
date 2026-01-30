@@ -66,11 +66,38 @@ const STORAGE_KEYS = {
   attendanceRecords: 'freee_attendance_records'
 }
 
+const PAYMENT_NAME_MIGRATION: Record<string, string> = {
+  '基本給': '月給',
+  '通勤手当': '非課税通勤手当',
+}
+
+const DEDUCTION_NAME_MIGRATION: Record<string, string> = {
+  '厚生年金': '厚生年金保険料',
+}
+
+function migratePayslipData(data: PayslipItem[]): PayslipItem[] {
+  return data.map(item => ({
+    ...item,
+    payments: item.payments.map(p => ({
+      ...p,
+      name: PAYMENT_NAME_MIGRATION[p.name] || p.name
+    })),
+    deductions: item.deductions.map(d => ({
+      ...d,
+      name: DEDUCTION_NAME_MIGRATION[d.name] || d.name
+    }))
+  }))
+}
+
 function loadFromStorage<T>(key: string, defaultValue: T): T {
   try {
     const stored = localStorage.getItem(key)
     if (stored) {
-      return JSON.parse(stored) as T
+      const parsed = JSON.parse(stored) as T
+      if (key === STORAGE_KEYS.salaryData || key === STORAGE_KEYS.bonusData) {
+        return migratePayslipData(parsed as PayslipItem[]) as T
+      }
+      return parsed
     }
   } catch (e) {
     console.error('Failed to load from localStorage:', e)
