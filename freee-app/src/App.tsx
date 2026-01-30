@@ -66,6 +66,9 @@ const STORAGE_KEYS = {
   attendanceRecords: 'freee_attendance_records'
 }
 
+const STANDARD_PAYMENT_ITEMS = ['月給', '残業手当', '勤怠控除', '非課税通勤手当', '課税通勤手当', '福利厚生費', '能力給', '見込み残業手当']
+const STANDARD_DEDUCTION_ITEMS = ['健康保険料', '介護保険料', '厚生年金保険料', '雇用保険料', '所得税', '住民税']
+
 const PAYMENT_NAME_MIGRATION: Record<string, string> = {
   '基本給': '月給',
   '通勤手当': '非課税通勤手当',
@@ -76,17 +79,32 @@ const DEDUCTION_NAME_MIGRATION: Record<string, string> = {
 }
 
 function migratePayslipData(data: PayslipItem[]): PayslipItem[] {
-  return data.map(item => ({
-    ...item,
-    payments: item.payments.map(p => ({
+  return data.map(item => {
+    const migratedPayments = item.payments.map(p => ({
       ...p,
       name: PAYMENT_NAME_MIGRATION[p.name] || p.name
-    })),
-    deductions: item.deductions.map(d => ({
+    }))
+    const migratedDeductions = item.deductions.map(d => ({
       ...d,
       name: DEDUCTION_NAME_MIGRATION[d.name] || d.name
     }))
-  }))
+    
+    const finalPayments = STANDARD_PAYMENT_ITEMS.map(name => {
+      const existing = migratedPayments.find(p => p.name === name)
+      return existing || { name, amount: 0 }
+    })
+    
+    const finalDeductions = STANDARD_DEDUCTION_ITEMS.map(name => {
+      const existing = migratedDeductions.find(d => d.name === name)
+      return existing || { name, amount: 0 }
+    })
+    
+    return {
+      ...item,
+      payments: finalPayments,
+      deductions: finalDeductions
+    }
+  })
 }
 
 function loadFromStorage<T>(key: string, defaultValue: T): T {
