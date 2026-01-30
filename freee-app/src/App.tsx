@@ -1,6 +1,8 @@
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useCallback } from 'react'
 import './App.css'
 import { Home, Clock, FileText, Menu, ChevronRight, ChevronLeft, Plus, X } from 'lucide-react'
+
+const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:8001'
 
 type TabType = 'home' | 'attendance' | 'payslip' | 'others'
 type PayslipTabType = 'salary' | 'bonus'
@@ -25,33 +27,33 @@ interface AttendanceRecord {
 }
 
 const initialSalaryData: PayslipItem[] = [
-  { id: 's1', year: 2026, month: 1, type: 'salary', netAmount: 285000, grossAmount: 350000, totalDeductions: 65000, payments: [{ name: '基本給', amount: 300000 }, { name: '通勤手当', amount: 20000 }, { name: '残業手当', amount: 30000 }], deductions: [{ name: '健康保険料', amount: 15000 }, { name: '厚生年金', amount: 27000 }, { name: '雇用保険料', amount: 3000 }, { name: '所得税', amount: 15000 }, { name: '住民税', amount: 5000 }] },
-  { id: 's2', year: 2025, month: 12, type: 'salary', netAmount: 280000, grossAmount: 345000, totalDeductions: 65000, payments: [{ name: '基本給', amount: 300000 }, { name: '通勤手当', amount: 20000 }, { name: '残業手当', amount: 25000 }], deductions: [{ name: '健康保険料', amount: 15000 }, { name: '厚生年金', amount: 27000 }, { name: '雇用保険料', amount: 3000 }, { name: '所得税', amount: 15000 }, { name: '住民税', amount: 5000 }] },
-  { id: 's3', year: 2025, month: 11, type: 'salary', netAmount: 282000, grossAmount: 347000, totalDeductions: 65000, payments: [{ name: '基本給', amount: 300000 }, { name: '通勤手当', amount: 20000 }, { name: '残業手当', amount: 27000 }], deductions: [{ name: '健康保険料', amount: 15000 }, { name: '厚生年金', amount: 27000 }, { name: '雇用保険料', amount: 3000 }, { name: '所得税', amount: 15000 }, { name: '住民税', amount: 5000 }] },
-  { id: 's4', year: 2025, month: 10, type: 'salary', netAmount: 278000, grossAmount: 343000, totalDeductions: 65000, payments: [{ name: '基本給', amount: 300000 }, { name: '通勤手当', amount: 20000 }, { name: '残業手当', amount: 23000 }], deductions: [{ name: '健康保険料', amount: 15000 }, { name: '厚生年金', amount: 27000 }, { name: '雇用保険料', amount: 3000 }, { name: '所得税', amount: 15000 }, { name: '住民税', amount: 5000 }] },
-  { id: 's5', year: 2025, month: 9, type: 'salary', netAmount: 275000, grossAmount: 340000, totalDeductions: 65000, payments: [{ name: '基本給', amount: 300000 }, { name: '通勤手当', amount: 20000 }, { name: '残業手当', amount: 20000 }], deductions: [{ name: '健康保険料', amount: 15000 }, { name: '厚生年金', amount: 27000 }, { name: '雇用保険料', amount: 3000 }, { name: '所得税', amount: 15000 }, { name: '住民税', amount: 5000 }] },
-  { id: 's6', year: 2025, month: 8, type: 'salary', netAmount: 275000, grossAmount: 340000, totalDeductions: 65000, payments: [{ name: '基本給', amount: 300000 }, { name: '通勤手当', amount: 20000 }, { name: '残業手当', amount: 20000 }], deductions: [{ name: '健康保険料', amount: 15000 }, { name: '厚生年金', amount: 27000 }, { name: '雇用保険料', amount: 3000 }, { name: '所得税', amount: 15000 }, { name: '住民税', amount: 5000 }] },
-  { id: 's7', year: 2025, month: 7, type: 'salary', netAmount: 275000, grossAmount: 340000, totalDeductions: 65000, payments: [{ name: '基本給', amount: 300000 }, { name: '通勤手当', amount: 20000 }, { name: '残業手当', amount: 20000 }], deductions: [{ name: '健康保険料', amount: 15000 }, { name: '厚生年金', amount: 27000 }, { name: '雇用保険料', amount: 3000 }, { name: '所得税', amount: 15000 }, { name: '住民税', amount: 5000 }] },
-  { id: 's8', year: 2025, month: 6, type: 'salary', netAmount: 275000, grossAmount: 340000, totalDeductions: 65000, payments: [{ name: '基本給', amount: 300000 }, { name: '通勤手当', amount: 20000 }, { name: '残業手当', amount: 20000 }], deductions: [{ name: '健康保険料', amount: 15000 }, { name: '厚生年金', amount: 27000 }, { name: '雇用保険料', amount: 3000 }, { name: '所得税', amount: 15000 }, { name: '住民税', amount: 5000 }] },
-  { id: 's9', year: 2025, month: 5, type: 'salary', netAmount: 275000, grossAmount: 340000, totalDeductions: 65000, payments: [{ name: '基本給', amount: 300000 }, { name: '通勤手当', amount: 20000 }, { name: '残業手当', amount: 20000 }], deductions: [{ name: '健康保険料', amount: 15000 }, { name: '厚生年金', amount: 27000 }, { name: '雇用保険料', amount: 3000 }, { name: '所得税', amount: 15000 }, { name: '住民税', amount: 5000 }] },
-  { id: 's10', year: 2025, month: 4, type: 'salary', netAmount: 275000, grossAmount: 340000, totalDeductions: 65000, payments: [{ name: '基本給', amount: 300000 }, { name: '通勤手当', amount: 20000 }, { name: '残業手当', amount: 20000 }], deductions: [{ name: '健康保険料', amount: 15000 }, { name: '厚生年金', amount: 27000 }, { name: '雇用保険料', amount: 3000 }, { name: '所得税', amount: 15000 }, { name: '住民税', amount: 5000 }] },
-  { id: 's11', year: 2025, month: 3, type: 'salary', netAmount: 275000, grossAmount: 340000, totalDeductions: 65000, payments: [{ name: '基本給', amount: 300000 }, { name: '通勤手当', amount: 20000 }, { name: '残業手当', amount: 20000 }], deductions: [{ name: '健康保険料', amount: 15000 }, { name: '厚生年金', amount: 27000 }, { name: '雇用保険料', amount: 3000 }, { name: '所得税', amount: 15000 }, { name: '住民税', amount: 5000 }] },
-  { id: 's12', year: 2025, month: 2, type: 'salary', netAmount: 275000, grossAmount: 340000, totalDeductions: 65000, payments: [{ name: '基本給', amount: 300000 }, { name: '通勤手当', amount: 20000 }, { name: '残業手当', amount: 20000 }], deductions: [{ name: '健康保険料', amount: 15000 }, { name: '厚生年金', amount: 27000 }, { name: '雇用保険料', amount: 3000 }, { name: '所得税', amount: 15000 }, { name: '住民税', amount: 5000 }] },
-  { id: 's13', year: 2025, month: 1, type: 'salary', netAmount: 275000, grossAmount: 340000, totalDeductions: 65000, payments: [{ name: '基本給', amount: 300000 }, { name: '通勤手当', amount: 20000 }, { name: '残業手当', amount: 20000 }], deductions: [{ name: '健康保険料', amount: 15000 }, { name: '厚生年金', amount: 27000 }, { name: '雇用保険料', amount: 3000 }, { name: '所得税', amount: 15000 }, { name: '住民税', amount: 5000 }] },
-  { id: 's14', year: 2024, month: 12, type: 'salary', netAmount: 270000, grossAmount: 335000, totalDeductions: 65000, payments: [{ name: '基本給', amount: 295000 }, { name: '通勤手当', amount: 20000 }, { name: '残業手当', amount: 20000 }], deductions: [{ name: '健康保険料', amount: 15000 }, { name: '厚生年金', amount: 27000 }, { name: '雇用保険料', amount: 3000 }, { name: '所得税', amount: 15000 }, { name: '住民税', amount: 5000 }] },
-  { id: 's15', year: 2024, month: 11, type: 'salary', netAmount: 270000, grossAmount: 335000, totalDeductions: 65000, payments: [{ name: '基本給', amount: 295000 }, { name: '通勤手当', amount: 20000 }, { name: '残業手当', amount: 20000 }], deductions: [{ name: '健康保険料', amount: 15000 }, { name: '厚生年金', amount: 27000 }, { name: '雇用保険料', amount: 3000 }, { name: '所得税', amount: 15000 }, { name: '住民税', amount: 5000 }] },
-  { id: 's16', year: 2024, month: 10, type: 'salary', netAmount: 270000, grossAmount: 335000, totalDeductions: 65000, payments: [{ name: '基本給', amount: 295000 }, { name: '通勤手当', amount: 20000 }, { name: '残業手当', amount: 20000 }], deductions: [{ name: '健康保険料', amount: 15000 }, { name: '厚生年金', amount: 27000 }, { name: '雇用保険料', amount: 3000 }, { name: '所得税', amount: 15000 }, { name: '住民税', amount: 5000 }] },
-  { id: 's17', year: 2024, month: 9, type: 'salary', netAmount: 270000, grossAmount: 335000, totalDeductions: 65000, payments: [{ name: '基本給', amount: 295000 }, { name: '通勤手当', amount: 20000 }, { name: '残業手当', amount: 20000 }], deductions: [{ name: '健康保険料', amount: 15000 }, { name: '厚生年金', amount: 27000 }, { name: '雇用保険料', amount: 3000 }, { name: '所得税', amount: 15000 }, { name: '住民税', amount: 5000 }] },
-  { id: 's18', year: 2024, month: 8, type: 'salary', netAmount: 270000, grossAmount: 335000, totalDeductions: 65000, payments: [{ name: '基本給', amount: 295000 }, { name: '通勤手当', amount: 20000 }, { name: '残業手当', amount: 20000 }], deductions: [{ name: '健康保険料', amount: 15000 }, { name: '厚生年金', amount: 27000 }, { name: '雇用保険料', amount: 3000 }, { name: '所得税', amount: 15000 }, { name: '住民税', amount: 5000 }] },
-  { id: 's19', year: 2024, month: 7, type: 'salary', netAmount: 270000, grossAmount: 335000, totalDeductions: 65000, payments: [{ name: '基本給', amount: 295000 }, { name: '通勤手当', amount: 20000 }, { name: '残業手当', amount: 20000 }], deductions: [{ name: '健康保険料', amount: 15000 }, { name: '厚生年金', amount: 27000 }, { name: '雇用保険料', amount: 3000 }, { name: '所得税', amount: 15000 }, { name: '住民税', amount: 5000 }] },
-  { id: 's20', year: 2024, month: 6, type: 'salary', netAmount: 270000, grossAmount: 335000, totalDeductions: 65000, payments: [{ name: '基本給', amount: 295000 }, { name: '通勤手当', amount: 20000 }, { name: '残業手当', amount: 20000 }], deductions: [{ name: '健康保険料', amount: 15000 }, { name: '厚生年金', amount: 27000 }, { name: '雇用保険料', amount: 3000 }, { name: '所得税', amount: 15000 }, { name: '住民税', amount: 5000 }] },
+  { id: 's1', year: 2026, month: 1, type: 'salary', netAmount: 263560, grossAmount: 305473, totalDeductions: 41913, payments: [{ name: '月給', amount: 180000 }, { name: '残業手当', amount: 0 }, { name: '勤怠控除', amount: 0 }, { name: '非課税通勤手当', amount: 18350 }, { name: '課税通勤手当', amount: 0 }, { name: '福利厚生費', amount: 10000 }, { name: '能力給', amount: 41200 }, { name: '見込み残業手当', amount: 18800 }], deductions: [{ name: '健康保険料', amount: 12036 }, { name: '介護保険料', amount: 0 }, { name: '厚生年金保険料', amount: 21960 }, { name: '雇用保険料', amount: 1311 }, { name: '所得税', amount: 6250 }, { name: '住民税', amount: 0 }] },
+  { id: 's2', year: 2025, month: 12, type: 'salary', netAmount: 221769, grossAmount: 256890, totalDeductions: 35121, payments: [{ name: '月給', amount: 180000 }, { name: '残業手当', amount: 0 }, { name: '勤怠控除', amount: 0 }, { name: '非課税通勤手当', amount: 18350 }, { name: '課税通勤手当', amount: 0 }, { name: '福利厚生費', amount: 0 }, { name: '能力給', amount: 41200 }, { name: '見込み残業手当', amount: 18800 }], deductions: [{ name: '健康保険料', amount: 12036 }, { name: '介護保険料', amount: 0 }, { name: '厚生年金保険料', amount: 21960 }, { name: '雇用保険料', amount: 1311 }, { name: '所得税', amount: 0 }, { name: '住民税', amount: 0 }] },
+  { id: 's3', year: 2025, month: 11, type: 'salary', netAmount: 221338, grossAmount: 256890, totalDeductions: 35552, payments: [{ name: '月給', amount: 180000 }, { name: '残業手当', amount: 0 }, { name: '勤怠控除', amount: 0 }, { name: '非課税通勤手当', amount: 18350 }, { name: '課税通勤手当', amount: 0 }, { name: '福利厚生費', amount: 0 }, { name: '能力給', amount: 41200 }, { name: '見込み残業手当', amount: 18800 }], deductions: [{ name: '健康保険料', amount: 12036 }, { name: '介護保険料', amount: 0 }, { name: '厚生年金保険料', amount: 21960 }, { name: '雇用保険料', amount: 1311 }, { name: '所得税', amount: 0 }, { name: '住民税', amount: 0 }] },
+  { id: 's4', year: 2025, month: 10, type: 'salary', netAmount: 189129, grossAmount: 224470, totalDeductions: 35341, payments: [{ name: '月給', amount: 180000 }, { name: '残業手当', amount: 0 }, { name: '勤怠控除', amount: -30802 }, { name: '非課税通勤手当', amount: 18350 }, { name: '課税通勤手当', amount: 0 }, { name: '福利厚生費', amount: 0 }, { name: '能力給', amount: 41200 }, { name: '見込み残業手当', amount: 18800 }], deductions: [{ name: '健康保険料', amount: 12036 }, { name: '介護保険料', amount: 0 }, { name: '厚生年金保険料', amount: 21960 }, { name: '雇用保険料', amount: 1311 }, { name: '所得税', amount: 0 }, { name: '住民税', amount: 0 }] },
+  { id: 's5', year: 2025, month: 9, type: 'salary', netAmount: 214223, grossAmount: 256890, totalDeductions: 42667, payments: [{ name: '月給', amount: 180000 }, { name: '残業手当', amount: 0 }, { name: '勤怠控除', amount: 0 }, { name: '非課税通勤手当', amount: 18350 }, { name: '課税通勤手当', amount: 0 }, { name: '福利厚生費', amount: 0 }, { name: '能力給', amount: 41200 }, { name: '見込み残業手当', amount: 18800 }], deductions: [{ name: '健康保険料', amount: 12036 }, { name: '介護保険料', amount: 0 }, { name: '厚生年金保険料', amount: 21960 }, { name: '雇用保険料', amount: 1311 }, { name: '所得税', amount: 7142 }, { name: '住民税', amount: 0 }] },
+  { id: 's6', year: 2025, month: 8, type: 'salary', netAmount: 217103, grossAmount: 261230, totalDeductions: 44127, payments: [{ name: '月給', amount: 180000 }, { name: '残業手当', amount: 0 }, { name: '勤怠控除', amount: 0 }, { name: '非課税通勤手当', amount: 18350 }, { name: '課税通勤手当', amount: 0 }, { name: '福利厚生費', amount: 0 }, { name: '能力給', amount: 41200 }, { name: '見込み残業手当', amount: 18800 }], deductions: [{ name: '健康保険料', amount: 12036 }, { name: '介護保険料', amount: 0 }, { name: '厚生年金保険料', amount: 21960 }, { name: '雇用保険料', amount: 1311 }, { name: '所得税', amount: 4910 }, { name: '住民税', amount: 3800 }] },
+  { id: 's7', year: 2025, month: 7, type: 'salary', netAmount: 217123, grossAmount: 261055, totalDeductions: 43932, payments: [{ name: '月給', amount: 180000 }, { name: '残業手当', amount: 0 }, { name: '勤怠控除', amount: -5835 }, { name: '非課税通勤手当', amount: 26890 }, { name: '課税通勤手当', amount: 0 }, { name: '福利厚生費', amount: 0 }, { name: '能力給', amount: 41200 }, { name: '見込み残業手当', amount: 18800 }], deductions: [{ name: '健康保険料', amount: 12036 }, { name: '介護保険料', amount: 0 }, { name: '厚生年金保険料', amount: 21960 }, { name: '雇用保険料', amount: 1311 }, { name: '所得税', amount: 4700 }, { name: '住民税', amount: 3800 }] },
+  { id: 's8', year: 2025, month: 6, type: 'salary', netAmount: 194793, grossAmount: 238310, totalDeductions: 43517, payments: [{ name: '月給', amount: 180000 }, { name: '残業手当', amount: 0 }, { name: '勤怠控除', amount: -28580 }, { name: '非課税通勤手当', amount: 26890 }, { name: '課税通勤手当', amount: 0 }, { name: '福利厚生費', amount: 0 }, { name: '能力給', amount: 41200 }, { name: '見込み残業手当', amount: 18800 }], deductions: [{ name: '健康保険料', amount: 12036 }, { name: '介護保険料', amount: 0 }, { name: '厚生年金保険料', amount: 21960 }, { name: '雇用保険料', amount: 1311 }, { name: '所得税', amount: 3910 }, { name: '住民税', amount: 4300 }] },
+  { id: 's9', year: 2025, month: 5, type: 'salary', netAmount: 215507, grossAmount: 255458, totalDeductions: 39951, payments: [{ name: '月給', amount: 180000 }, { name: '残業手当', amount: 0 }, { name: '勤怠控除', amount: -11432 }, { name: '非課税通勤手当', amount: 26890 }, { name: '課税通勤手当', amount: 0 }, { name: '福利厚生費', amount: 0 }, { name: '能力給', amount: 41200 }, { name: '見込み残業手当', amount: 18800 }], deductions: [{ name: '健康保険料', amount: 12036 }, { name: '介護保険料', amount: 0 }, { name: '厚生年金保険料', amount: 21960 }, { name: '雇用保険料', amount: 1311 }, { name: '所得税', amount: 4550 }, { name: '住民税', amount: 0 }] },
+  { id: 's10', year: 2025, month: 4, type: 'salary', netAmount: 206266, grossAmount: 245938, totalDeductions: 39672, payments: [{ name: '月給', amount: 180000 }, { name: '残業手当', amount: 0 }, { name: '勤怠控除', amount: -10952 }, { name: '非課税通勤手当', amount: 26890 }, { name: '課税通勤手当', amount: 0 }, { name: '福利厚生費', amount: 0 }, { name: '能力給', amount: 32000 }, { name: '見込み残業手当', amount: 18000 }], deductions: [{ name: '健康保険料', amount: 12036 }, { name: '介護保険料', amount: 0 }, { name: '厚生年金保険料', amount: 21960 }, { name: '雇用保険料', amount: 1311 }, { name: '所得税', amount: 4200 }, { name: '住民税', amount: 0 }] },
+  { id: 's11', year: 2025, month: 3, type: 'salary', netAmount: 213213, grossAmount: 253126, totalDeductions: 39913, payments: [{ name: '月給', amount: 180000 }, { name: '残業手当', amount: 0 }, { name: '勤怠控除', amount: -3764 }, { name: '非課税通勤手当', amount: 26890 }, { name: '課税通勤手当', amount: 0 }, { name: '福利厚生費', amount: 0 }, { name: '能力給', amount: 32000 }, { name: '見込み残業手当', amount: 18000 }], deductions: [{ name: '健康保険料', amount: 12036 }, { name: '介護保険料', amount: 0 }, { name: '厚生年金保険料', amount: 21960 }, { name: '雇用保険料', amount: 1311 }, { name: '所得税', amount: 4410 }, { name: '住民税', amount: 0 }] },
+  { id: 's12', year: 2025, month: 2, type: 'salary', netAmount: 216815, grossAmount: 256890, totalDeductions: 40075, payments: [{ name: '月給', amount: 180000 }, { name: '残業手当', amount: 0 }, { name: '勤怠控除', amount: 0 }, { name: '非課税通勤手当', amount: 26890 }, { name: '課税通勤手当', amount: 0 }, { name: '福利厚生費', amount: 0 }, { name: '能力給', amount: 32000 }, { name: '見込み残業手当', amount: 18000 }], deductions: [{ name: '健康保険料', amount: 12036 }, { name: '介護保険料', amount: 0 }, { name: '厚生年金保険料', amount: 21960 }, { name: '雇用保険料', amount: 1311 }, { name: '所得税', amount: 4550 }, { name: '住民税', amount: 0 }] },
+  { id: 's13', year: 2025, month: 1, type: 'salary', netAmount: 231685, grossAmount: 266890, totalDeductions: 35205, payments: [{ name: '月給', amount: 180000 }, { name: '残業手当', amount: 0 }, { name: '勤怠控除', amount: 0 }, { name: '非課税通勤手当', amount: 26890 }, { name: '課税通勤手当', amount: 0 }, { name: '福利厚生費', amount: 10000 }, { name: '能力給', amount: 32000 }, { name: '見込み残業手当', amount: 18000 }], deductions: [{ name: '健康保険料', amount: 12036 }, { name: '介護保険料', amount: 0 }, { name: '厚生年金保険料', amount: 21960 }, { name: '雇用保険料', amount: 1311 }, { name: '所得税', amount: 4910 }, { name: '住民税', amount: 0 }] },
+  { id: 's14', year: 2024, month: 12, type: 'salary', netAmount: 271065, grossAmount: 306890, totalDeductions: 35825, payments: [{ name: '月給', amount: 180000 }, { name: '残業手当', amount: 0 }, { name: '勤怠控除', amount: 0 }, { name: '非課税通勤手当', amount: 26890 }, { name: '課税通勤手当', amount: 0 }, { name: '福利厚生費', amount: 0 }, { name: '能力給', amount: 32000 }, { name: '見込み残業手当', amount: 18000 }], deductions: [{ name: '健康保険料', amount: 12036 }, { name: '介護保険料', amount: 0 }, { name: '厚生年金保険料', amount: 21960 }, { name: '雇用保険料', amount: 1311 }, { name: '所得税', amount: 0 }, { name: '住民税', amount: 0 }] },
+  { id: 's15', year: 2024, month: 11, type: 'salary', netAmount: 180541, grossAmount: 215820, totalDeductions: 35279, payments: [{ name: '月給', amount: 180000 }, { name: '残業手当', amount: 0 }, { name: '勤怠控除', amount: -41070 }, { name: '非課税通勤手当', amount: 26890 }, { name: '課税通勤手当', amount: 0 }, { name: '福利厚生費', amount: 0 }, { name: '能力給', amount: 32000 }, { name: '見込み残業手当', amount: 18000 }], deductions: [{ name: '健康保険料', amount: 12036 }, { name: '介護保険料', amount: 0 }, { name: '厚生年金保険料', amount: 21960 }, { name: '雇用保険料', amount: 1311 }, { name: '所得税', amount: 0 }, { name: '住民税', amount: 0 }] },
+  { id: 's16', year: 2024, month: 10, type: 'salary', netAmount: 190747, grossAmount: 226088, totalDeductions: 35341, payments: [{ name: '月給', amount: 180000 }, { name: '残業手当', amount: 0 }, { name: '勤怠控除', amount: -30802 }, { name: '非課税通勤手当', amount: 26890 }, { name: '課税通勤手当', amount: 0 }, { name: '福利厚生費', amount: 0 }, { name: '能力給', amount: 32000 }, { name: '見込み残業手当', amount: 18000 }], deductions: [{ name: '健康保険料', amount: 12036 }, { name: '介護保険料', amount: 0 }, { name: '厚生年金保険料', amount: 21960 }, { name: '雇用保険料', amount: 1311 }, { name: '所得税', amount: 0 }, { name: '住民税', amount: 0 }] },
+  { id: 's17', year: 2024, month: 9, type: 'salary', netAmount: 221365, grossAmount: 256890, totalDeductions: 35525, payments: [{ name: '月給', amount: 180000 }, { name: '残業手当', amount: 0 }, { name: '勤怠控除', amount: 0 }, { name: '非課税通勤手当', amount: 26890 }, { name: '課税通勤手当', amount: 0 }, { name: '福利厚生費', amount: 0 }, { name: '能力給', amount: 32000 }, { name: '見込み残業手当', amount: 18000 }], deductions: [{ name: '健康保険料', amount: 12036 }, { name: '介護保険料', amount: 0 }, { name: '厚生年金保険料', amount: 21960 }, { name: '雇用保険料', amount: 1311 }, { name: '所得税', amount: 0 }, { name: '住民税', amount: 0 }] },
+  { id: 's18', year: 2024, month: 8, type: 'salary', netAmount: 206396, grossAmount: 241831, totalDeductions: 35435, payments: [{ name: '月給', amount: 180000 }, { name: '残業手当', amount: 0 }, { name: '勤怠控除', amount: -15059 }, { name: '非課税通勤手当', amount: 26890 }, { name: '課税通勤手当', amount: 0 }, { name: '福利厚生費', amount: 0 }, { name: '能力給', amount: 32000 }, { name: '見込み残業手当', amount: 18000 }], deductions: [{ name: '健康保険料', amount: 12036 }, { name: '介護保険料', amount: 0 }, { name: '厚生年金保険料', amount: 21960 }, { name: '雇用保険料', amount: 1311 }, { name: '所得税', amount: 0 }, { name: '住民税', amount: 0 }] },
+  { id: 's19', year: 2024, month: 7, type: 'salary', netAmount: 172376, grossAmount: 207606, totalDeductions: 35230, payments: [{ name: '月給', amount: 180000 }, { name: '残業手当', amount: 0 }, { name: '勤怠控除', amount: -49284 }, { name: '非課税通勤手当', amount: 26890 }, { name: '課税通勤手当', amount: 0 }, { name: '福利厚生費', amount: 0 }, { name: '能力給', amount: 32000 }, { name: '見込み残業手当', amount: 18000 }], deductions: [{ name: '健康保険料', amount: 12036 }, { name: '介護保険料', amount: 0 }, { name: '厚生年金保険料', amount: 21960 }, { name: '雇用保険料', amount: 1311 }, { name: '所得税', amount: 0 }, { name: '住民税', amount: 0 }] },
+  { id: 's20', year: 2024, month: 6, type: 'salary', netAmount: 144846, grossAmount: 145720, totalDeductions: 874, payments: [{ name: '月給', amount: 180000 }, { name: '残業手当', amount: 0 }, { name: '勤怠控除', amount: -14280 }, { name: '非課税通勤手当', amount: 26890 }, { name: '課税通勤手当', amount: 0 }, { name: '福利厚生費', amount: 0 }, { name: '能力給', amount: 32000 }, { name: '見込み残業手当', amount: 18000 }], deductions: [{ name: '健康保険料', amount: 12036 }, { name: '介護保険料', amount: 0 }, { name: '厚生年金保険料', amount: 21960 }, { name: '雇用保険料', amount: 1311 }, { name: '所得税', amount: 0 }, { name: '住民税', amount: 0 }] },
 ]
 
 const initialBonusData: PayslipItem[] = [
-  { id: 'b1', year: 2025, month: 12, type: 'bonus', netAmount: 450000, grossAmount: 600000, totalDeductions: 150000, payments: [{ name: '賞与（基本）', amount: 500000 }, { name: '特別手当', amount: 100000 }], deductions: [{ name: '健康保険料', amount: 30000 }, { name: '厚生年金', amount: 55000 }, { name: '雇用保険料', amount: 5000 }, { name: '所得税', amount: 60000 }] },
-  { id: 'b2', year: 2025, month: 7, type: 'bonus', netAmount: 420000, grossAmount: 550000, totalDeductions: 130000, payments: [{ name: '賞与（基本）', amount: 450000 }, { name: '特別手当', amount: 100000 }], deductions: [{ name: '健康保険料', amount: 28000 }, { name: '厚生年金', amount: 50000 }, { name: '雇用保険料', amount: 4000 }, { name: '所得税', amount: 48000 }] },
-  { id: 'b3', year: 2024, month: 12, type: 'bonus', netAmount: 400000, grossAmount: 520000, totalDeductions: 120000, payments: [{ name: '賞与（基本）', amount: 420000 }, { name: '特別手当', amount: 100000 }], deductions: [{ name: '健康保険料', amount: 26000 }, { name: '厚生年金', amount: 47000 }, { name: '雇用保険料', amount: 4000 }, { name: '所得税', amount: 43000 }] },
-  { id: 'b4', year: 2024, month: 7, type: 'bonus', netAmount: 380000, grossAmount: 500000, totalDeductions: 120000, payments: [{ name: '賞与（基本）', amount: 400000 }, { name: '特別手当', amount: 100000 }], deductions: [{ name: '健康保険料', amount: 25000 }, { name: '厚生年金', amount: 45000 }, { name: '雇用保険料', amount: 4000 }, { name: '所得税', amount: 46000 }] },
+  { id: 'b1', year: 2025, month: 12, type: 'bonus', netAmount: 450000, grossAmount: 600000, totalDeductions: 150000, payments: [{ name: '月給', amount: 500000 }, { name: '残業手当', amount: 0 }, { name: '勤怠控除', amount: 0 }, { name: '非課税通勤手当', amount: 0 }, { name: '課税通勤手当', amount: 0 }, { name: '福利厚生費', amount: 0 }, { name: '能力給', amount: 100000 }, { name: '見込み残業手当', amount: 0 }], deductions: [{ name: '健康保険料', amount: 30000 }, { name: '介護保険料', amount: 0 }, { name: '厚生年金保険料', amount: 55000 }, { name: '雇用保険料', amount: 5000 }, { name: '所得税', amount: 60000 }, { name: '住民税', amount: 0 }] },
+  { id: 'b2', year: 2025, month: 7, type: 'bonus', netAmount: 420000, grossAmount: 550000, totalDeductions: 130000, payments: [{ name: '月給', amount: 450000 }, { name: '残業手当', amount: 0 }, { name: '勤怠控除', amount: 0 }, { name: '非課税通勤手当', amount: 0 }, { name: '課税通勤手当', amount: 0 }, { name: '福利厚生費', amount: 0 }, { name: '能力給', amount: 100000 }, { name: '見込み残業手当', amount: 0 }], deductions: [{ name: '健康保険料', amount: 28000 }, { name: '介護保険料', amount: 0 }, { name: '厚生年金保険料', amount: 50000 }, { name: '雇用保険料', amount: 4000 }, { name: '所得税', amount: 48000 }, { name: '住民税', amount: 0 }] },
+  { id: 'b3', year: 2024, month: 12, type: 'bonus', netAmount: 400000, grossAmount: 520000, totalDeductions: 120000, payments: [{ name: '月給', amount: 420000 }, { name: '残業手当', amount: 0 }, { name: '勤怠控除', amount: 0 }, { name: '非課税通勤手当', amount: 0 }, { name: '課税通勤手当', amount: 0 }, { name: '福利厚生費', amount: 0 }, { name: '能力給', amount: 100000 }, { name: '見込み残業手当', amount: 0 }], deductions: [{ name: '健康保険料', amount: 26000 }, { name: '介護保険料', amount: 0 }, { name: '厚生年金保険料', amount: 47000 }, { name: '雇用保険料', amount: 4000 }, { name: '所得税', amount: 43000 }, { name: '住民税', amount: 0 }] },
+  { id: 'b4', year: 2024, month: 7, type: 'bonus', netAmount: 380000, grossAmount: 500000, totalDeductions: 120000, payments: [{ name: '月給', amount: 400000 }, { name: '残業手当', amount: 0 }, { name: '勤怠控除', amount: 0 }, { name: '非課税通勤手当', amount: 0 }, { name: '課税通勤手当', amount: 0 }, { name: '福利厚生費', amount: 0 }, { name: '能力給', amount: 100000 }, { name: '見込み残業手当', amount: 0 }], deductions: [{ name: '健康保険料', amount: 25000 }, { name: '介護保険料', amount: 0 }, { name: '厚生年金保険料', amount: 45000 }, { name: '雇用保険料', amount: 4000 }, { name: '所得税', amount: 46000 }, { name: '住民税', amount: 0 }] },
 ]
 
 const initialAttendanceRecords: AttendanceRecord[] = [
@@ -66,11 +68,56 @@ const STORAGE_KEYS = {
   attendanceRecords: 'freee_attendance_records'
 }
 
+const STANDARD_PAYMENT_ITEMS = ['月給', '残業手当', '勤怠控除', '非課税通勤手当', '課税通勤手当', '福利厚生費', '能力給', '見込み残業手当']
+const STANDARD_DEDUCTION_ITEMS = ['健康保険料', '介護保険料', '厚生年金保険料', '雇用保険料', '所得税', '住民税']
+
+const PAYMENT_NAME_MIGRATION: Record<string, string> = {
+  '基本給': '月給',
+  '通勤手当': '非課税通勤手当',
+}
+
+const DEDUCTION_NAME_MIGRATION: Record<string, string> = {
+  '厚生年金': '厚生年金保険料',
+}
+
+function migratePayslipData(data: PayslipItem[]): PayslipItem[] {
+  return data.map(item => {
+    const migratedPayments = item.payments.map(p => ({
+      ...p,
+      name: PAYMENT_NAME_MIGRATION[p.name] || p.name
+    }))
+    const migratedDeductions = item.deductions.map(d => ({
+      ...d,
+      name: DEDUCTION_NAME_MIGRATION[d.name] || d.name
+    }))
+    
+    const finalPayments = STANDARD_PAYMENT_ITEMS.map(name => {
+      const existing = migratedPayments.find(p => p.name === name)
+      return existing || { name, amount: 0 }
+    })
+    
+    const finalDeductions = STANDARD_DEDUCTION_ITEMS.map(name => {
+      const existing = migratedDeductions.find(d => d.name === name)
+      return existing || { name, amount: 0 }
+    })
+    
+    return {
+      ...item,
+      payments: finalPayments,
+      deductions: finalDeductions
+    }
+  })
+}
+
 function loadFromStorage<T>(key: string, defaultValue: T): T {
   try {
     const stored = localStorage.getItem(key)
     if (stored) {
-      return JSON.parse(stored) as T
+      const parsed = JSON.parse(stored) as T
+      if (key === STORAGE_KEYS.salaryData || key === STORAGE_KEYS.bonusData) {
+        return migratePayslipData(parsed as PayslipItem[]) as T
+      }
+      return parsed
     }
   } catch (e) {
     console.error('Failed to load from localStorage:', e)
@@ -90,15 +137,92 @@ function formatCurrency(amount: number): string {
   return amount.toLocaleString('ja-JP') + '円'
 }
 
+async function fetchPayslips(): Promise<PayslipItem[]> {
+  try {
+    const response = await fetch(`${API_URL}/payslips`)
+    if (!response.ok) throw new Error('Failed to fetch payslips')
+    return await response.json()
+  } catch (e) {
+    console.error('Failed to fetch payslips:', e)
+    return []
+  }
+}
+
+async function createPayslipAPI(payslip: Omit<PayslipItem, 'netAmount' | 'grossAmount' | 'totalDeductions'>): Promise<PayslipItem | null> {
+  try {
+    const response = await fetch(`${API_URL}/payslips`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(payslip)
+    })
+    if (!response.ok) throw new Error('Failed to create payslip')
+    return await response.json()
+  } catch (e) {
+    console.error('Failed to create payslip:', e)
+    return null
+  }
+}
+
+async function updatePayslipAPI(id: string, payslip: Partial<PayslipItem>): Promise<PayslipItem | null> {
+  try {
+    const response = await fetch(`${API_URL}/payslips/${id}`, {
+      method: 'PUT',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(payslip)
+    })
+    if (!response.ok) throw new Error('Failed to update payslip')
+    return await response.json()
+  } catch (e) {
+    console.error('Failed to update payslip:', e)
+    return null
+  }
+}
+
+async function deletePayslipAPI(id: string): Promise<boolean> {
+  try {
+    const response = await fetch(`${API_URL}/payslips/${id}`, {
+      method: 'DELETE'
+    })
+    return response.ok
+  } catch (e) {
+    console.error('Failed to delete payslip:', e)
+    return false
+  }
+}
+
+async function bulkCreatePayslipsAPI(payslips: PayslipItem[]): Promise<PayslipItem[]> {
+  try {
+    const response = await fetch(`${API_URL}/payslips/bulk`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(payslips.map(p => ({
+        id: p.id,
+        year: p.year,
+        month: p.month,
+        type: p.type,
+        payments: p.payments,
+        deductions: p.deductions
+      })))
+    })
+    if (!response.ok) throw new Error('Failed to bulk create payslips')
+    return await response.json()
+  } catch (e) {
+    console.error('Failed to bulk create payslips:', e)
+    return []
+  }
+}
+
 function App() {
   const [activeTab, setActiveTab] = useState<TabType>('home')
   const [currentTime, setCurrentTime] = useState(new Date())
   const [payslipTab, setPayslipTab] = useState<PayslipTabType>('salary')
   const [currentScreen, setCurrentScreen] = useState<ScreenType>('main')
   const [selectedPayslip, setSelectedPayslip] = useState<PayslipItem | null>(null)
-  const [salaryData, setSalaryData] = useState<PayslipItem[]>(() => loadFromStorage(STORAGE_KEYS.salaryData, initialSalaryData))
-  const [bonusData, setBonusData] = useState<PayslipItem[]>(() => loadFromStorage(STORAGE_KEYS.bonusData, initialBonusData))
+  const [salaryData, setSalaryData] = useState<PayslipItem[]>([])
+  const [bonusData, setBonusData] = useState<PayslipItem[]>([])
   const [attendanceRecords, setAttendanceRecords] = useState<AttendanceRecord[]>(() => loadFromStorage(STORAGE_KEYS.attendanceRecords, initialAttendanceRecords))
+  const [isLoading, setIsLoading] = useState(true)
+  const [isInitialized, setIsInitialized] = useState(false)
   const [calendarDate, setCalendarDate] = useState(new Date())
   const [selectedForDelete, setSelectedForDelete] = useState<Set<string>>(new Set())
   const [deleteTab, setDeleteTab] = useState<PayslipTabType>('salary')
@@ -107,13 +231,61 @@ function App() {
   const [newPayslipType, setNewPayslipType] = useState<'salary' | 'bonus'>('salary')
   const [newPayslipYear, setNewPayslipYear] = useState(2026)
   const [newPayslipMonth, setNewPayslipMonth] = useState(1)
-  const [newPayments, setNewPayments] = useState<{ name: string; amount: number }[]>([{ name: '', amount: 0 }])
-  const [newDeductions, setNewDeductions] = useState<{ name: string; amount: number }[]>([{ name: '', amount: 0 }])
+    const [newPayments, setNewPayments] = useState<{ name: string; amount: number }[]>([
+      { name: '月給', amount: 0 },
+      { name: '残業手当', amount: 0 },
+      { name: '勤怠控除', amount: 0 },
+      { name: '非課税通勤手当', amount: 0 },
+      { name: '課税通勤手当', amount: 0 },
+      { name: '福利厚生費', amount: 0 },
+      { name: '能力給', amount: 0 },
+      { name: '見込み残業手当', amount: 0 },
+    ])
+    const [newDeductions, setNewDeductions] = useState<{ name: string; amount: number }[]>([
+      { name: '健康保険料', amount: 0 },
+      { name: '介護保険料', amount: 0 },
+      { name: '厚生年金保険料', amount: 0 },
+      { name: '雇用保険料', amount: 0 },
+      { name: '所得税', amount: 0 },
+      { name: '住民税', amount: 0 },
+    ])
   const [showActionMenu, setShowActionMenu] = useState(false)
   const [editTab, setEditTab] = useState<PayslipTabType>('salary')
   const [editingPayslip, setEditingPayslip] = useState<PayslipItem | null>(null)
   const [editPayments, setEditPayments] = useState<{ name: string; amount: number }[]>([])
   const [editDeductions, setEditDeductions] = useState<{ name: string; amount: number }[]>([])
+
+  const loadPayslipsFromAPI = useCallback(async () => {
+    setIsLoading(true)
+    try {
+      const payslips = await fetchPayslips()
+      if (payslips.length === 0 && !isInitialized) {
+        const allInitialData = [...initialSalaryData, ...initialBonusData]
+        const createdPayslips = await bulkCreatePayslipsAPI(allInitialData)
+        if (createdPayslips.length > 0) {
+          setSalaryData(createdPayslips.filter(p => p.type === 'salary'))
+          setBonusData(createdPayslips.filter(p => p.type === 'bonus'))
+        } else {
+          setSalaryData(initialSalaryData)
+          setBonusData(initialBonusData)
+        }
+      } else {
+        setSalaryData(payslips.filter(p => p.type === 'salary'))
+        setBonusData(payslips.filter(p => p.type === 'bonus'))
+      }
+      setIsInitialized(true)
+    } catch (e) {
+      console.error('Failed to load payslips:', e)
+      setSalaryData(initialSalaryData)
+      setBonusData(initialBonusData)
+    } finally {
+      setIsLoading(false)
+    }
+  }, [isInitialized])
+
+  useEffect(() => {
+    loadPayslipsFromAPI()
+  }, [loadPayslipsFromAPI])
 
   useEffect(() => {
     const timer = setInterval(() => {
@@ -121,14 +293,6 @@ function App() {
     }, 1000)
     return () => clearInterval(timer)
   }, [])
-
-  useEffect(() => {
-    saveToStorage(STORAGE_KEYS.salaryData, salaryData)
-  }, [salaryData])
-
-  useEffect(() => {
-    saveToStorage(STORAGE_KEYS.bonusData, bonusData)
-  }, [bonusData])
 
   useEffect(() => {
     saveToStorage(STORAGE_KEYS.attendanceRecords, attendanceRecords)
@@ -179,40 +343,59 @@ function App() {
     setCurrentScreen('payslipDetail')
   }
 
-  const handleCreatePayslip = () => {
-    const totalPayments = newPayments.reduce((sum, p) => sum + p.amount, 0)
-    const totalDeductions = newDeductions.reduce((sum, d) => sum + d.amount, 0)
-    const newPayslip: PayslipItem = {
+  const handleCreatePayslip = async () => {
+    const newPayslipData = {
       id: `${newPayslipType === 'salary' ? 's' : 'b'}${Date.now()}`,
       year: newPayslipYear,
       month: newPayslipMonth,
       type: newPayslipType,
-      netAmount: totalPayments - totalDeductions,
-      grossAmount: totalPayments,
-      totalDeductions: totalDeductions,
-      payments: newPayments.filter(p => p.name && p.amount > 0),
-      deductions: newDeductions.filter(d => d.name && d.amount > 0),
+      payments: newPayments.filter(p => p.name),
+      deductions: newDeductions.filter(d => d.name),
     }
     
-    if (newPayslipType === 'salary') {
-      setSalaryData([newPayslip, ...salaryData].sort((a, b) => {
-        if (a.year !== b.year) return b.year - a.year
-        return b.month - a.month
-      }))
-    } else {
-      setBonusData([newPayslip, ...bonusData].sort((a, b) => {
-        if (a.year !== b.year) return b.year - a.year
-        return b.month - a.month
-      }))
+    const createdPayslip = await createPayslipAPI(newPayslipData)
+    if (createdPayslip) {
+      if (newPayslipType === 'salary') {
+        setSalaryData([createdPayslip, ...salaryData].sort((a, b) => {
+          if (a.year !== b.year) return b.year - a.year
+          return b.month - a.month
+        }))
+      } else {
+        setBonusData([createdPayslip, ...bonusData].sort((a, b) => {
+          if (a.year !== b.year) return b.year - a.year
+          return b.month - a.month
+        }))
+      }
     }
     
-    setNewPayments([{ name: '', amount: 0 }])
-    setNewDeductions([{ name: '', amount: 0 }])
+    setNewPayments([
+      { name: '月給', amount: 0 },
+      { name: '残業手当', amount: 0 },
+      { name: '勤怠控除', amount: 0 },
+      { name: '非課税通勤手当', amount: 0 },
+      { name: '課税通勤手当', amount: 0 },
+      { name: '福利厚生費', amount: 0 },
+      { name: '能力給', amount: 0 },
+      { name: '見込み残業手当', amount: 0 },
+    ])
+    setNewDeductions([
+      { name: '健康保険料', amount: 0 },
+      { name: '介護保険料', amount: 0 },
+      { name: '厚生年金保険料', amount: 0 },
+      { name: '雇用保険料', amount: 0 },
+      { name: '所得税', amount: 0 },
+      { name: '住民税', amount: 0 },
+    ])
     setCurrentScreen('main')
     setActiveTab('payslip')
   }
 
-  const handleDeleteSelected = () => {
+  const handleDeleteSelected = async () => {
+    const idsToDelete = Array.from(selectedForDelete)
+    for (const id of idsToDelete) {
+      await deletePayslipAPI(id)
+    }
+    
     if (deleteTab === 'salary') {
       setSalaryData(salaryData.filter(s => !selectedForDelete.has(s.id)))
     } else {
@@ -773,24 +956,21 @@ function App() {
     setEditDeductions([...payslip.deductions])
   }
 
-  const handleSaveEdit = () => {
+  const handleSaveEdit = async () => {
     if (!editingPayslip) return
     
-    const totalPayments = editPayments.reduce((sum, p) => sum + p.amount, 0)
-    const totalDeductions = editDeductions.reduce((sum, d) => sum + d.amount, 0)
-    const updatedPayslip: PayslipItem = {
-      ...editingPayslip,
-      netAmount: totalPayments - totalDeductions,
-      grossAmount: totalPayments,
-      totalDeductions: totalDeductions,
-      payments: editPayments.filter(p => p.name && p.amount > 0),
-      deductions: editDeductions.filter(d => d.name && d.amount > 0),
+    const updateData = {
+      payments: editPayments.filter(p => p.name),
+      deductions: editDeductions.filter(d => d.name),
     }
     
-    if (editingPayslip.type === 'salary') {
-      setSalaryData(salaryData.map(s => s.id === editingPayslip.id ? updatedPayslip : s))
-    } else {
-      setBonusData(bonusData.map(b => b.id === editingPayslip.id ? updatedPayslip : b))
+    const updatedPayslip = await updatePayslipAPI(editingPayslip.id, updateData)
+    if (updatedPayslip) {
+      if (editingPayslip.type === 'salary') {
+        setSalaryData(salaryData.map(s => s.id === editingPayslip.id ? updatedPayslip : s))
+      } else {
+        setBonusData(bonusData.map(b => b.id === editingPayslip.id ? updatedPayslip : b))
+      }
     }
     
     setEditingPayslip(null)
@@ -958,6 +1138,14 @@ function App() {
   )
 
   const renderContent = () => {
+    if (isLoading && activeTab === 'payslip') {
+      return (
+        <div className="flex flex-col h-full bg-[#F8F9FB] items-center justify-center">
+          <div className="text-gray-500">読み込み中...</div>
+        </div>
+      )
+    }
+    
     if (currentScreen === 'payslipDetail') return renderPayslipDetail()
     if (currentScreen === 'createPayslip') return renderCreatePayslipScreen()
     if (currentScreen === 'deletePayslip') return renderDeletePayslipScreen()
