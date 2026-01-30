@@ -107,8 +107,24 @@ function App() {
   const [newPayslipType, setNewPayslipType] = useState<'salary' | 'bonus'>('salary')
   const [newPayslipYear, setNewPayslipYear] = useState(2026)
   const [newPayslipMonth, setNewPayslipMonth] = useState(1)
-  const [newPayments, setNewPayments] = useState<{ name: string; amount: number }[]>([{ name: '', amount: 0 }])
-  const [newDeductions, setNewDeductions] = useState<{ name: string; amount: number }[]>([{ name: '', amount: 0 }])
+    const [newPayments, setNewPayments] = useState<{ name: string; amount: number }[]>([
+      { name: '月給', amount: 0 },
+      { name: '残業手当', amount: 0 },
+      { name: '勤怠控除', amount: 0 },
+      { name: '非課税通勤手当', amount: 0 },
+      { name: '課税通勤手当', amount: 0 },
+      { name: '福利厚生費', amount: 0 },
+      { name: '能力給', amount: 0 },
+      { name: '見込み残業手当', amount: 0 },
+    ])
+    const [newDeductions, setNewDeductions] = useState<{ name: string; amount: number }[]>([
+      { name: '健康保険料', amount: 0 },
+      { name: '介護保険料', amount: 0 },
+      { name: '厚生年金保険料', amount: 0 },
+      { name: '雇用保険料', amount: 0 },
+      { name: '所得税', amount: 0 },
+      { name: '住民税', amount: 0 },
+    ])
   const [showActionMenu, setShowActionMenu] = useState(false)
   const [editTab, setEditTab] = useState<PayslipTabType>('salary')
   const [editingPayslip, setEditingPayslip] = useState<PayslipItem | null>(null)
@@ -190,8 +206,8 @@ function App() {
       netAmount: totalPayments - totalDeductions,
       grossAmount: totalPayments,
       totalDeductions: totalDeductions,
-      payments: newPayments.filter(p => p.name && p.amount > 0),
-      deductions: newDeductions.filter(d => d.name && d.amount > 0),
+            payments: newPayments.filter(p => p.name),
+            deductions: newDeductions.filter(d => d.name),
     }
     
     if (newPayslipType === 'salary') {
@@ -206,8 +222,24 @@ function App() {
       }))
     }
     
-    setNewPayments([{ name: '', amount: 0 }])
-    setNewDeductions([{ name: '', amount: 0 }])
+        setNewPayments([
+          { name: '月給', amount: 0 },
+          { name: '残業手当', amount: 0 },
+          { name: '勤怠控除', amount: 0 },
+          { name: '非課税通勤手当', amount: 0 },
+          { name: '課税通勤手当', amount: 0 },
+          { name: '福利厚生費', amount: 0 },
+          { name: '能力給', amount: 0 },
+          { name: '見込み残業手当', amount: 0 },
+        ])
+        setNewDeductions([
+          { name: '健康保険料', amount: 0 },
+          { name: '介護保険料', amount: 0 },
+          { name: '厚生年金保険料', amount: 0 },
+          { name: '雇用保険料', amount: 0 },
+          { name: '所得税', amount: 0 },
+          { name: '住民税', amount: 0 },
+        ])
     setCurrentScreen('main')
     setActiveTab('payslip')
   }
@@ -783,8 +815,8 @@ function App() {
       netAmount: totalPayments - totalDeductions,
       grossAmount: totalPayments,
       totalDeductions: totalDeductions,
-      payments: editPayments.filter(p => p.name && p.amount > 0),
-      deductions: editDeductions.filter(d => d.name && d.amount > 0),
+            payments: editPayments.filter(p => p.name),
+            deductions: editDeductions.filter(d => d.name),
     }
     
     if (editingPayslip.type === 'salary') {
